@@ -1,0 +1,32 @@
+id: Transformers
+seed: 2104
+pretrained_path: null
+model:
+    pad_idx: 0
+    d_model: 512
+    d_ffn: 2048
+    n_layer: 6
+    n_head: 8
+    max_len: 256
+trainer:
+    nepochs: 50
+    val_step: 1
+    log_step: 50
+    print_every: 1
+    save_every: 1
+    lr: !!float 1e-5
+optimizer:
+    adam_eps: !!float 1e-8
+    patience: 10
+    warmup: 100
+    clip: 1.0
+    weight_decay: !!float 5e-4
+    factor: 0.9
+dataset:
+    root_dir: data/test
+    train:
+        batch_size: 12
+        shuffle: True
+        clip_grads: True
+    val:
+        batch_size: 12
