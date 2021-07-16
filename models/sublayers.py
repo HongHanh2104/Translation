@@ -30,19 +30,19 @@ class ScaledDotProductAttention(nn.Module):
         self.scale = scale
 
     def forward(self, q, k, v, mask=None):
-        # q: [b, n_head, q_len, d_k]
-        # k: [b, n_head, k_len, d_k]
-        # v: [b, n_head, v_len, d_k]
+        # q: [b, n_head, t_q, d_k]
+        # k: [b, n_head, t_k, d_k]
+        # v: [b, n_head, t_k, d_v]
 
         # Step 1: dot product q with k^T to compute similarity
-        # k_tranpose: [b, n_head, d_k, k_len]
-        # attn: [b, n_head, q_len, k_len]
+        # k_tranpose: [b, n_head, d_k, t_k]
+        # attn: [b, n_head, t_q, t_k]
         k_T = k.transpose(2, 3)
         attn = (q @ k_T) * self.scale
 
         # Step 2: Apply mask
         if mask is not None:
-            mask = mask.unsqueeze(1)  # [b, 1, k_len, k_len]
+            mask = mask.unsqueeze(1)  # [b, 1, t_q, t_k]
             attn = attn.masked_fill(mask == 0, -1e9)
 
         # Step 3: Pass to softmax to make [0, 1] range
@@ -50,8 +50,9 @@ class ScaledDotProductAttention(nn.Module):
         attn = self.attn_drop(attn)
 
         # Step 4: Multiply with v
-        scores = attn @ v
-        return scores
+        # v: [b, n_head, t_q, d_v]
+        x = attn @ v
+        return x, attn
 
 
 class MultiHeadAttention(nn.Module):
@@ -74,24 +75,28 @@ class MultiHeadAttention(nn.Module):
 
     '''
 
-    def __init__(self, d_model,
-                 n_head,
+    def __init__(self,
+                 d_model=512,
+                 d_k=64, d_v=64,
+                 n_head=8,
                  attn_drop=0.,
                  ):
         super().__init__()
 
+        assert d_model % n_head == 0
         self.n_head = n_head
         self.d_model = d_model
 
         # head dimension
-        self.d_head = self.d_model // self.n_head
-        self.scale = self.d_head ** (-0.5)
+        self.d_k = self.d_model // self.n_head
+        self.scale = self.d_k ** (-0.5)
+        self.d_v = d_v
 
-        self.w_q = nn.Linear(d_model, d_model, bias=True)
-        self.w_k = nn.Linear(d_model, d_model, bias=True)
-        self.w_v = nn.Linear(d_model, d_model, bias=True)
+        self.w_q = nn.Linear(d_model, n_head * d_k, bias=True)
+        self.w_k = nn.Linear(d_model, n_head * d_k, bias=True)
+        self.w_v = nn.Linear(d_model, n_head * d_v, bias=True)
 
-        self.out_proj = nn.Linear(d_model, d_model, bias=True)
+        self.out_proj = nn.Linear(n_head * d_v, d_model, bias=True)
 
         self.attention = ScaledDotProductAttention(scale=self.scale,
                                                    attn_drop=attn_drop)
@@ -99,21 +104,18 @@ class MultiHeadAttention(nn.Module):
     def forward(self, q, k, v, mask=None):
         # q, k, v: [b, seq_len, d_model]
         # mask: [b, query_len, key_len]
-        b, q_len, k_len, v_len = q.shape[0], q.shape[1], k.shape[1], v.shape[1]
+        b = q.shape[0]
 
-        q = self.w_q(q).reshape(b, self.n_head, q_len, self.d_head)
-        k = self.w_k(k).reshape(b, self.n_head, k_len, self.d_head)
-        v = self.w_v(v).reshape(b, self.n_head, v_len, self.d_head)
+        q = self.w_q(q).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
+        k = self.w_k(k).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
+        v = self.w_v(v).reshape(b, -1, self.n_head, self.d_v).transpose(1, 2)
 
-        #q, k, v = self.split(q), self.split(k), self.split(v)
+        x, _ = self.attention(q, k, v, mask=mask)
 
-        scores = self.attention(q, k, v, mask=mask)
+        x = x.transpose(1, 2).reshape(b, -1, self.n_head * self.d_v)
+        x = self.out_proj(x)
 
-        scores = scores.transpose(1, 2).reshape(
-            b, -1, self.n_head * self.d_head)
-        scores = self.out_proj(scores)
-
-        return scores  # [b, seq_len, d_model]
+        return x  # [b, seq_len, d_model]
 
     def split(self, tensor):
         """
