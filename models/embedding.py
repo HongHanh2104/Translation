@@ -3,9 +3,14 @@ import torch.nn as nn
 import math
 from torch.autograd import Variable
 
-class PositionalEncoding(nn.Module):
+class TransformerEmbedding(nn.Module):
     """
-    Compute sinusoid encoding.  
+    Transformer embedding = Token embedding + Positional encoding (sinusoid) 
+
+    @param:
+    :vocab_size: size of vocabulary
+    :max_len:  max setence length
+    :d_model: dimension of model
     """
     def __init__(self, 
                  vocab_size, 
@@ -13,16 +18,17 @@ class PositionalEncoding(nn.Module):
                  max_len=5000, 
                  padding_idx=1, 
                  dropout=0.1):
-        super(PositionalEncoding, self).__init__()
+        super(TransformerEmbedding, self).__init__()
         
         self.d_model = d_model
 
+        # Token embedding
         self.embedding = nn.Embedding(
                                 vocab_size, 
                                 d_model, 
                                 padding_idx=padding_idx
                                 )
-        
+        # Positional encoding
         pe = torch.zeros(max_len, d_model)
         
         pos = torch.arange(0, max_len).unsqueeze(1)
@@ -42,9 +48,9 @@ class PositionalEncoding(nn.Module):
     
     def forward(self, x):
         # x: [b, seq_len]
-        x = self.embedding(x)
-        x = x * math.sqrt(self.d_model)
-        x = x + self.pe[:, :x.size(1)]
+        _, length = x.shape
+        x = self.embedding(x) * math.sqrt(self.d_model)
+        x = x + self.pe[:, :length]
         x = self.dropout(x)
         
         return x # [b, seq_len, d_model]
@@ -52,6 +58,6 @@ class PositionalEncoding(nn.Module):
 if __name__ == '__main__':
     import numpy as np
     sequence = torch.tensor(np.random.randint(0, 100, size=(3, 5)), requires_grad=False)
-    pe = PositionalEncoding(100, 512)
+    pe = TransformerEmbedding(100, 512)
     out = pe(sequence)
     print(out)

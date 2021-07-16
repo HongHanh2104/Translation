@@ -1,4 +1,4 @@
-from model.models import Transformer
+from models.model import Transformer
 from dataset.multi30k import Multi30kLoader
 from losses import TokenCrossEntropyLoss
 from metrics import BLEUMetric
@@ -45,8 +45,9 @@ def train(config):
                         d_ffn=config['model']['d_ffn'],
                         n_layer=config['model']['n_layer'],
                         n_head=config['model']['n_head'],
+                        dropout=config['model']['dropout']
     )
-    
+        
     # Get pretrained model
     pretrained_path = config['pretrained_path']
     pretrained = None
@@ -55,9 +56,6 @@ def train(config):
         for item in ["model"]:
             config[item] = pretrained["config"][item]
 
-    run_name = name_id + '-' + datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
-    
-    print(f'Run name : {run_name}')
     # Train from pretrained if it is not None
     if pretrained is not None:
         model.load_state_dict(pretrained['model_state_dict'])
@@ -80,8 +78,7 @@ def train(config):
     random.seed(config['seed'])
     optimizer = Adam(model.parameters(), 
                     lr=config['trainer']['lr'],
-                    weight_decay=config['optimizer']['weight_decay'],
-                    eps=config['optimizer']['adam_eps'])
+                )
                     
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
                             optimizer=optimizer,
