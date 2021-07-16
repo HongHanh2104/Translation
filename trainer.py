@@ -166,7 +166,7 @@ class Trainer():
                 out_words = idx_to_word(x=out_words, vocab=self.data.target.vocab)
                 bleu = self.metric.get_bleu(hypothesis=out_words.split(), reference=trg_words.split())
                 total_bleu.append(bleu)
-                    
+            
             score_bleu = sum(total_bleu) / len(total_bleu)
             batch_bleu.append(score_bleu)
 

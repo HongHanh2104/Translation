@@ -1,15 +1,16 @@
 import torch
-from torch import nn 
+from torch import nn
 import math
+
 
 class ScaledDotProductAttention(nn.Module):
     """
     Compute scaled dot product attention
-    
+
     # Params: 
     :scale (float): math.sqrt(d_model)
     :attn_drop (float): for dropout
-    
+
     # Inputs: 
     :q (Query) [batch, q_len, d_model]: 
            given sentence that we focused on (decoder)
@@ -18,11 +19,13 @@ class ScaledDotProductAttention(nn.Module):
     :v (Value) [batch, v_len, d_model]: 
            every sentence same with Key (encoder)
     :mask: matrix containing indices to be masked
-    
+
     """
+
     def __init__(self, scale, attn_drop):
         super().__init__()
-        self.softmax = nn.Softmax(dim=-1) # apply the softmax along the last dimension
+        # apply the softmax along the last dimension
+        self.softmax = nn.Softmax(dim=-1)
         self.attn_drop = nn.Dropout(attn_drop)
         self.scale = scale
 
@@ -30,18 +33,18 @@ class ScaledDotProductAttention(nn.Module):
         # q: [b, n_head, q_len, d_k]
         # k: [b, n_head, k_len, d_k]
         # v: [b, n_head, v_len, d_k]
-        
+
         # Step 1: dot product q with k^T to compute similarity
         # k_tranpose: [b, n_head, d_k, k_len]
         # attn: [b, n_head, q_len, k_len]
-        k_T = k.transpose(-2, -1)
+        k_T = k.transpose(2, 3)
         attn = (q @ k_T) * self.scale
-        
+
         # Step 2: Apply mask
         if mask is not None:
-            mask = mask.unsqueeze(1) # [b, 1, k_len, k_len]
-            attn = attn.masked_fill(mask == 0, 1e-12)
-        
+            mask = mask.unsqueeze(1)  # [b, 1, k_len, k_len]
+            attn = attn.masked_fill(mask == 0, -1e9)
+
         # Step 3: Pass to softmax to make [0, 1] range
         attn = self.softmax(attn)
         attn = self.attn_drop(attn)
@@ -49,6 +52,7 @@ class ScaledDotProductAttention(nn.Module):
         # Step 4: Multiply with v
         scores = attn @ v
         return scores
+
 
 class MultiHeadAttention(nn.Module):
     '''
@@ -69,51 +73,48 @@ class MultiHeadAttention(nn.Module):
     :scores [batch_ out_len, d_model]
 
     '''
-    def __init__(self, d_model, 
+
+    def __init__(self, d_model,
                  n_head,
                  attn_drop=0.,
-                ):
+                 ):
         super().__init__()
-        
+
         self.n_head = n_head
         self.d_model = d_model
-        
+
         # head dimension
         self.d_head = self.d_model // self.n_head
         self.scale = self.d_head ** (-0.5)
-        
+
         self.w_q = nn.Linear(d_model, d_model, bias=True)
         self.w_k = nn.Linear(d_model, d_model, bias=True)
         self.w_v = nn.Linear(d_model, d_model, bias=True)
-        
+
         self.out_proj = nn.Linear(d_model, d_model, bias=True)
 
-        self.attention = ScaledDotProductAttention(scale=self.scale, 
+        self.attention = ScaledDotProductAttention(scale=self.scale,
                                                    attn_drop=attn_drop)
-        
+
     def forward(self, q, k, v, mask=None):
         # q, k, v: [b, seq_len, d_model]
         # mask: [b, query_len, key_len]
-        b, _, _ = q.shape
-        #  Step 1: dot product with weight matrices 
-        q = self.w_q(q).reshape(b, -1, self.n_head, self.d_head) # [batch, q_len, n_head, d_head]
-        k = self.w_k(k).reshape(b, -1, self.n_head, self.d_head) # [batch, k_len, n_head, d_head]
-        v = self.w_v(v).reshape(b, -1, self.n_head, self.d_head) # [batch, v_len, n_head, d_head]
+        b, q_len, k_len, v_len = q.shape[0], q.shape[1], k.shape[1], v.shape[1]
 
-        # Step 2: split by number of heads
-        q = q.permute(0, 2, 1, 3) # [batch, n_head, q_len, d_head]
-        k = k.permute(0, 2, 1, 3) # [batch, n_head, k_len, d_head]
-        v = v.permute(0, 2, 1, 3) # [batch, n_head, v_len, d_head]
+        q = self.w_q(q).reshape(b, self.n_head, q_len, self.d_head)
+        k = self.w_k(k).reshape(b, self.n_head, k_len, self.d_head)
+        v = self.w_v(v).reshape(b, self.n_head, v_len, self.d_head)
 
-        # Step 3: scale dot product
+        #q, k, v = self.split(q), self.split(k), self.split(v)
+
         scores = self.attention(q, k, v, mask=mask)
-        
-        # Step 4: concat and pass to linear layer
-        scores = scores.transpose(1, 2).reshape(b, -1, self.n_head * self.d_head)
+
+        scores = scores.transpose(1, 2).reshape(
+            b, -1, self.n_head * self.d_head)
         scores = self.out_proj(scores)
 
-        return scores # [b, seq_len, d_model]
-    
+        return scores  # [b, seq_len, d_model]
+
     def split(self, tensor):
         """
         Split tensor by number of head
@@ -127,24 +128,27 @@ class MultiHeadAttention(nn.Module):
         tensor = tensor.reshape(b, self.n_head, length, d_tensor)
         return tensor
 
+
 class PositionwiseFeedForward(nn.Module):
     '''
     Fully connected feed-forward network
     This consists of 2 linear transformations with a ReLU activation in between. 
     '''
+
     def __init__(self, d_model, d_ffn, dropout=0.1):
         super().__init__()
         self.feed_forward = nn.Sequential(
             nn.Linear(d_model, d_ffn),
-            nn.Dropout(dropout),
             nn.ReLU(),
-            nn.Linear(d_ffn, d_model), 
-            nn.Dropout(dropout)
+            nn.Dropout(dropout),
+            nn.Linear(d_ffn, d_model),
+            # nn.Dropout(dropout)
         )
-    
+
     def forward(self, x):
         # x: [b, seq_len, d_model]
         return self.feed_forward(x)
+
 
 if __name__ == '__main__':
     # inputs = torch.randn(3, 5, 512).cpu()

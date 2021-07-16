@@ -13,8 +13,8 @@ class TokenCrossEntropyLoss(nn.Module):
         #print("trgs: ", trgs.size())
         ntokens = (trg != self.pad_idx).sum().item()
 
-        out = out.contiguous().reshape(-1, out.shape[-1])
-        trg = trg.contiguous().reshape(-1)
+        out = out.reshape(-1, out.shape[-1])
+        trg = trg.reshape(-1)
 
         loss = self.base_cross_entropy(out, trg)      
 

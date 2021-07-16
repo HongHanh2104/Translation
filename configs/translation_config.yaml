@@ -9,12 +9,12 @@ model:
     max_len: 256
     dropout: 0.1
 trainer:
-    nepochs: 1000
+    nepochs: 100
     val_step: 1
     log_step: 30
-    lr: !!float 1e-3
+    lr: !!float 1e-4
 optimizer:
-    adam_eps: !!float 1e-8
+    # adam_eps: !!float 1e-8
     patience: 10
     warmup: 10
     clip: 1.0
@@ -22,8 +22,8 @@ optimizer:
 dataset:
     root_dir: null
     train:
-        batch_size: 64
+        batch_size: 256
         shuffle: True
         clip_grads: True
     val:
-        batch_size: 64
+        batch_size: 2048
