@@ -97,16 +97,6 @@ class BLEUMetric:
             stats += np.array(self._compute_bleu_stats(hyp, ref))
         #print(stats)
         return 100 * self._compute_bleu_score(stats)
-    
-    def idx_to_word(self, x, vocab):
-        words = []
-        
-        for i in x:
-            word = vocab.itos[i]
-            if '<' not in word:
-                words.append(word)
-        words = " ".join(words)
-        return words
 
 if __name__ == '__main__':
     metric = BLEUMetric()
