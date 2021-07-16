@@ -9,8 +9,7 @@ class Multi30kLoader():
     source: Field = None
     target: Field = None
 
-    def __init__(self, 
-                 ext):
+    def __init__(self, ext):
         super().__init__()
 
         self.ext = ext
@@ -54,10 +53,10 @@ class Multi30kLoader():
         return source, target
     
     def create_dataset(self):
-        self.train_data, self.val_data, self.test_data = Multi30k.splits(exts=self.ext, 
-                                          fields=(self.source, 
-                                                  self.target)
-                                        )
+        self.train_data, self.val_data, self.test_data = Multi30k.splits(
+                                                                exts=self.ext, 
+                                                                fields=(self.source, self.target)
+                                                                )
         return self.train_data, self.val_data, self.test_data
     
     def build_vocab(self, data, min_freq):

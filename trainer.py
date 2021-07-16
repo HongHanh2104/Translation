@@ -7,11 +7,12 @@ import os
 import json
 
 from loggers import TensorboardLogger
+from utils.utils import idx_to_word
 
 class Trainer():
     def __init__(self, model, 
                  device,
-                 dataloader,
+                 data,
                  iterator,
                  loss, 
                  metric, 
@@ -24,7 +25,7 @@ class Trainer():
         
         self.model = model
         self.train_iter, self.val_iter = iterator
-        self.dataloader = dataloader
+        self.data = data
 
         self.loss = loss
         self.metric = metric
@@ -34,19 +35,20 @@ class Trainer():
         
         # Train ID 
         self.train_id = self.config['id']
-        self.train_id += '-' + datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+        self.train_id += ('-' + datetime.now().strftime('%Y_%m_%d-%H_%M_%S'))
+        print(self.train_id)
 
         self.save_dir = os.path.join('checkpoints', self.train_id)
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
+        
+        # Logger
         self.tsboard = TensorboardLogger(path=self.save_dir)
 
         # Get arguments
         self.nepochs = self.config['trainer']['nepochs']
         self.log_step = self.config['trainer']['log_step']
         self.val_step = self.config['trainer']['val_step']
-        #self.print_every = self.config['trainer']['print_every']
-        #self.save_every = self.config['trainer']['save_every']
         
         self.best_loss = np.inf
         self.best_metric = 0.0
@@ -159,9 +161,9 @@ class Trainer():
             total_bleu = []
                 
             for j in range(src.size()[0]):
-                trg_words = self.metric.idx_to_word(x=batch.trg[j], vocab=self.dataloader.target.vocab)
+                trg_words = idx_to_word(x=batch.trg[j], vocab=self.data.target.vocab)
                 out_words = out[j].max(dim=1)[1]
-                out_words = self.metric.idx_to_word(x=out_words, vocab=self.dataloader.target.vocab)
+                out_words = idx_to_word(x=out_words, vocab=self.data.target.vocab)
                 bleu = self.metric.get_bleu(hypothesis=out_words.split(), reference=trg_words.split())
                 total_bleu.append(bleu)
                     

@@ -1,43 +1,25 @@
 from model.models import Transformer
 from dataset.multi30k import Multi30kLoader
 from losses import TokenCrossEntropyLoss
-from metrics import AccuracyMetric, BLEUMetric
-from optimizers import NoamOptimizer
+from metrics import BLEUMetric
 from trainer import Trainer
 
 import torch
 import torch.nn as nn
 from torch import optim
 from torch.optim import Adam 
-import numpy as np 
 
-from argparse import ArgumentParser
+import argparse
 from datetime import datetime
-import json
 import random
 import yaml
 import argparse
-
-from tqdm import tqdm  
 
 def train(config):
     # Get device
     dev_id = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(dev_id)
     
-    # Get pretrained model
-    pretrained_path = config['pretrained_path']
-    pretrained = None
-    if pretrained_path != None:
-        pretrained = torch.load(pretrained_path, map_location=dev_id)
-        for item in ["model"]:
-            config[item] = pretrained["config"][item]
-
-    name_id = config['id']   
-    run_name = name_id + '-' + datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
-    
-    print(f'Run name : {run_name}')
-
     # Build dataset
     random.seed(config['seed'])
     print('Building dataset ...')
@@ -64,12 +46,23 @@ def train(config):
                         n_layer=config['model']['n_layer'],
                         n_head=config['model']['n_head'],
     )
-    model = model.to(device)
+    
+    # Get pretrained model
+    pretrained_path = config['pretrained_path']
+    pretrained = None
+    if pretrained_path != None:
+        pretrained = torch.load(pretrained_path, map_location=dev_id)
+        for item in ["model"]:
+            config[item] = pretrained["config"][item]
 
+    run_name = name_id + '-' + datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+    
+    print(f'Run name : {run_name}')
     # Train from pretrained if it is not None
     if pretrained is not None:
         model.load_state_dict(pretrained['model_state_dict'])
     
+    model = model.to(device)
     parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'The model has {parameters} trainable parameters.')
 
@@ -103,7 +96,7 @@ def train(config):
     random.seed(config['seed'])
     trainer = Trainer(model=model,
                       device=device,
-                      dataloader=data,
+                      data=data,
                       iterator=(train_iter, val_iter),
                       loss=loss,
                       metric=metric,
