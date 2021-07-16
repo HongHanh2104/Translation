@@ -8,8 +8,8 @@ if __name__ == '__main__':
 
     model = Transformer(n_src_vocab=100,
                         n_trg_vocab=100,
-                        src_pad_idx=0,
-                        trg_pad_idx=0,
+                        src_pad_idx=1,
+                        trg_pad_idx=1,
                         max_len=5000,
                         d_model=512,
                         d_ffn=2048,
@@ -24,4 +24,4 @@ if __name__ == '__main__':
     src_seq = torch.randint(50, (1, 5)).to(device)
     trg_seq = torch.randint(50, (1, 5)).to(device)
     pred = model(src_seq, trg_seq)
-    print(pred.shape)
+    #print(pred.shape)

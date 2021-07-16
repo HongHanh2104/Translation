@@ -13,7 +13,7 @@ class EncoderLayer(nn.Module):
                             n_head=n_head,
                             attn_drop=dropout
                         )
-        self.norm_1 = nn.LayerNorm(d_model)
+        self.norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_1 = nn.Dropout(dropout)
                 
         self.pos_ffn = PositionwiseFeedForward(
@@ -21,14 +21,14 @@ class EncoderLayer(nn.Module):
                             d_ffn=d_ffn, 
                             dropout=dropout
                         )
-        self.norm_2= nn.LayerNorm(d_model)
+        self.norm_2= nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_2 = nn.Dropout(dropout)
     
     def forward(self, x, mask=None):
         # x: [b, seq_len, d_model]
         residual_1 = x
         x = self.self_attn(x, x, x, mask)
-        x= self.norm_1(x + residual_1)
+        x = self.norm_1(x + residual_1)
         x = self.dropout_1(x)
 
         residual_2 = x
@@ -48,7 +48,7 @@ class DecoderLayer(nn.Module):
                             n_head=n_head,
                             attn_drop=dropout
                         )
-        self.norm_1 = nn.LayerNorm(d_model)
+        self.norm_1 = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_1 = nn.Dropout(dropout)
         
         self.self_attn = MultiHeadAttention(
@@ -56,7 +56,7 @@ class DecoderLayer(nn.Module):
                             n_head=n_head,
                             attn_drop=dropout
                         )
-        self.norm_2 = nn.LayerNorm(d_model)
+        self.norm_2 = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_2 = nn.Dropout(dropout)
         
         self.pos_ffn = PositionwiseFeedForward(
@@ -64,17 +64,17 @@ class DecoderLayer(nn.Module):
                             d_ffn=d_ffn, 
                             dropout=dropout
                         )
-        self.norm_3 = nn.LayerNorm(d_model)
+        self.norm_3 = nn.LayerNorm(d_model, eps=1e-6)
         self.dropout_3 = nn.Dropout(dropout)
 
-    def forward(self, x, ecd_outs, memory_mask=None, mask_2=None):
+    def forward(self, x, ecd_outs, dec_enc_attn_mask=None, slf_attn_mask=None):
         residual_1 = x 
-        x = self.masked_self_attn(x, x, x, mask_2)
+        x = self.masked_self_attn(x, x, x, slf_attn_mask)
         x = self.norm_1(x + residual_1)
         x = self.dropout_1(x)
 
         residual_2 = x 
-        x = self.self_attn(x, ecd_outs, ecd_outs, memory_mask)
+        x = self.self_attn(x, ecd_outs, ecd_outs, dec_enc_attn_mask)
         x = self.norm_2(x + residual_2)
         x = self.dropout_2(x)
 

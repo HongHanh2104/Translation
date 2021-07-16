@@ -55,6 +55,7 @@ class Decoder(nn.Module):
                             max_len=max_len,
                             dropout=dropout
                             )
+
         self.layer_stack = nn.ModuleList([
                     DecoderLayer(d_model=d_model, 
                                 d_ffn=d_ffn, 
@@ -64,13 +65,13 @@ class Decoder(nn.Module):
                     ])
         self.linear = nn.Linear(d_model, n_dec_vocab)
 
-    def forward(self, trg, enc_outs, memory_mask, mask_2):
+    def forward(self, trg, enc_outs, dec_enc_attn_mask, slf_attn_mask):
         # trg: [b, seq_len - 1, d_model]
         # enc_outs: [b, seq_len, d_model]
         trg = self.pos_encoding(trg)
         
         for layer in self.layer_stack:
-            trg = layer(trg, enc_outs, memory_mask, mask_2)
+            trg = layer(trg, enc_outs, dec_enc_attn_mask, slf_attn_mask)
         
         out = self.linear(trg) # [b, seq_len, trg_vocab_size]
         return out
@@ -110,11 +111,11 @@ class Transformer(nn.Module):
     def forward(self, src_seq, trg_seq):
         # src_seq: [batch, src_len]
         # trg_seq: [batch, trg_len]
-        mask_1 = get_pad_mask(src_seq, self.src_pad_idx) # [b, src_seq, src_seq]
-        mask_2 = get_pad_mask(trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)
+        src_mask = get_pad_mask(src_seq, self.src_pad_idx) 
+        trg_mask = get_pad_mask(trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)
         
-        enc_outs = self.encoder(src_seq, mask_1) # [batch, seq_len, d_model]
-        dec_outs = self.decoder(trg_seq, enc_outs, mask_1, mask_2) # [b, seq_len, trg_vocab_size]
+        enc_outs = self.encoder(src_seq, src_mask) # [batch, seq_len, d_model]
+        dec_outs = self.decoder(trg_seq, enc_outs, src_mask, trg_mask) # [b, seq_len, trg_vocab_size]
         return dec_outs
 
 
