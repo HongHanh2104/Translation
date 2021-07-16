@@ -4,8 +4,6 @@ from losses import TokenCrossEntropyLoss
 from metrics import AccuracyMetric, BLEUMetric
 from optimizers import NoamOptimizer
 from trainer import Trainer
-from utils.utils import input_target_collate_fn
-from utils.tokenize import Tokenizer
 
 import torch
 import torch.nn as nn
@@ -49,7 +47,7 @@ def train(config):
     train_iter, val_iter, _ = data.make_iter(
                                         batch_size=config['dataset']['train']['batch_size'],
                                         device=device
-                                )
+                                        )
     src_pad_idx, trg_pad_idx = data.get_pad_idx()
     enc_voc_size, dec_voc_size = data.get_voc_size()
 
