@@ -7,12 +7,21 @@ class PositionalEncoding(nn.Module):
     """
     Compute sinusoid encoding.  
     """
-    def __init__(self, embedding_num, d_model, max_len=5000, padding_idx=1, dropout=0.1):
+    def __init__(self, 
+                 vocab_size, 
+                 d_model, 
+                 max_len=5000, 
+                 padding_idx=1, 
+                 dropout=0.1):
         super(PositionalEncoding, self).__init__()
         
         self.d_model = d_model
-        self.embedding_num = embedding_num
-        self.embedding = nn.Embedding(embedding_num, d_model, padding_idx=padding_idx)
+
+        self.embedding = nn.Embedding(
+                                vocab_size, 
+                                d_model, 
+                                padding_idx=padding_idx
+                                )
         
         pe = torch.zeros(max_len, d_model)
         
@@ -24,6 +33,9 @@ class PositionalEncoding(nn.Module):
         pe[:, 0::2] = torch.sin(pos * div_term) # dim 2i
         pe[:, 1::2] = torch.cos(pos * div_term) # dim 2i + 1
         pe = pe.unsqueeze(0) # [b, max_len, d_model]
+        
+        # Resigter buffer in order to save the positional encodings inside state_dict
+        # If not, these would be excluded from the state_dict becuase they are not learnable
         self.register_buffer('pe', pe)
 
         self.dropout = nn.Dropout(dropout)

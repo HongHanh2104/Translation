@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn 
-from model.sublayers import MultiHeadAttention, PositionwiseFeedForward, LayerNorm
+from models.sublayers import MultiHeadAttention, PositionwiseFeedForward
 
 class EncoderLayer(nn.Module):
     def __init__(self, d_model, 
@@ -10,9 +10,10 @@ class EncoderLayer(nn.Module):
         super().__init__()
         self.self_attn = MultiHeadAttention(
                             d_model=d_model, 
-                            n_head=n_head
+                            n_head=n_head,
+                            attn_drop=dropout
                         )
-        self.norm_1 = LayerNorm(d_model=d_model)
+        self.norm_1 = nn.LayerNorm(d_model)
         self.dropout_1 = nn.Dropout(dropout)
                 
         self.pos_ffn = PositionwiseFeedForward(
@@ -20,7 +21,7 @@ class EncoderLayer(nn.Module):
                             d_ffn=d_ffn, 
                             dropout=dropout
                         )
-        self.norm_2= LayerNorm(d_model=d_model)
+        self.norm_2= nn.LayerNorm(d_model)
         self.dropout_2 = nn.Dropout(dropout)
     
     def forward(self, x, mask=None):
@@ -44,16 +45,18 @@ class DecoderLayer(nn.Module):
         super().__init__()
         self.masked_self_attn = MultiHeadAttention(
                             d_model=d_model, 
-                            n_head=n_head
+                            n_head=n_head,
+                            attn_drop=dropout
                         )
-        self.norm_1 = LayerNorm(d_model=d_model)
+        self.norm_1 = nn.LayerNorm(d_model)
         self.dropout_1 = nn.Dropout(dropout)
         
         self.self_attn = MultiHeadAttention(
                             d_model=d_model, 
-                            n_head=n_head
+                            n_head=n_head,
+                            attn_drop=dropout
                         )
-        self.norm_2 = LayerNorm(d_model=d_model)
+        self.norm_2 = nn.LayerNorm(d_model)
         self.dropout_2 = nn.Dropout(dropout)
         
         self.pos_ffn = PositionwiseFeedForward(
@@ -61,12 +64,8 @@ class DecoderLayer(nn.Module):
                             d_ffn=d_ffn, 
                             dropout=dropout
                         )
-        self.norm_3 = LayerNorm(d_model=d_model)
+        self.norm_3 = nn.LayerNorm(d_model)
         self.dropout_3 = nn.Dropout(dropout)
-
-        # self.layernorm_1 = nn.LayerNorm(d_model, eps=1e-6)
-        # self.layernorm_2 = nn.LayerNorm(d_model, eps=1e-6)
-        # self.layernorm_3 = nn.LayerNorm(d_model, eps=1e-6)
 
     def forward(self, x, ecd_outs, memory_mask=None, mask_2=None):
         residual_1 = x 
@@ -89,11 +88,11 @@ class DecoderLayer(nn.Module):
 
 if __name__ == '__main__':
     x = torch.randn(1, 3, 4).cpu()
-    encoderlayer = EncoderLayer(d_model=4, n_head=2)
+    encoderlayer = EncoderLayer(d_model=4, d_ffn=4, n_head=2)
     ecd_out = encoderlayer(x).cpu()
     print(ecd_out.size())
 
     y = torch.randn(1, 3, 4).cpu()
-    decoderlayer = DecoderLayer(d_model=4, n_head=2)
+    decoderlayer = DecoderLayer(d_model=4, d_ffn=4, n_head=2)
     dcd_out = decoderlayer(y, ecd_out).cpu()
     print(dcd_out.size())
