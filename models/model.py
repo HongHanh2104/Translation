@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from models.layers import EncoderLayer, DecoderLayer
-from models.embedding import PositionalEncoding
+from models.embedding import TransformerEmbedding
 from models.mask import get_pad_mask, get_subsequent_mask
 
 import numpy as np
@@ -18,7 +18,7 @@ class Encoder(nn.Module):
                  dropout=0.1):
         super().__init__()
         self.d_model = d_model
-        self.pos_encoding = PositionalEncoding(
+        self.pos_encoding = TransformerEmbedding(
                             vocab_size=n_src_vocab, 
                             d_model=d_model, 
                             max_len=max_len,
@@ -49,7 +49,7 @@ class Decoder(nn.Module):
                  dropout=0.1):
         super().__init__()
         self.d_model = d_model
-        self.pos_encoding = PositionalEncoding(
+        self.pos_encoding = TransformerEmbedding(
                             vocab_size=n_dec_vocab, 
                             d_model=d_model, 
                             max_len=max_len,
