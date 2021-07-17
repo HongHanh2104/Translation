@@ -7,7 +7,7 @@ from trainer import Trainer
 import torch
 import torch.nn as nn
 from torch import optim
-from torch.optim import Adam 
+from torch.optim import Adam
 
 import argparse
 from datetime import datetime
@@ -15,11 +15,12 @@ import random
 import yaml
 import argparse
 
+
 def train(config):
     # Get device
     dev_id = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(dev_id)
-    
+
     # Build dataset
     random.seed(config['seed'])
     print('Building dataset ...')
@@ -27,16 +28,16 @@ def train(config):
     train, val, _ = data.create_dataset()
     data.build_vocab(data=train, min_freq=2)
     train_iter, val_iter, _ = data.make_iter(
-                                        batch_size=config['dataset']['train']['batch_size'],
-                                        device=device
-                                        )
+        batch_size=config['dataset']['train']['batch_size'],
+        device=device
+    )
     src_pad_idx, trg_pad_idx = data.get_pad_idx()
     enc_voc_size, dec_voc_size = data.get_voc_size()
 
     # Define model
     random.seed(config['seed'])
     print('Building model ...')
-    model = Transformer(n_src_vocab=enc_voc_size, 
+    model = Transformer(n_src_vocab=enc_voc_size,
                         n_trg_vocab=dec_voc_size,
                         src_pad_idx=src_pad_idx,
                         trg_pad_idx=trg_pad_idx,
@@ -46,8 +47,8 @@ def train(config):
                         n_layer=config['model']['n_layer'],
                         n_head=config['model']['n_head'],
                         dropout=config['model']['dropout']
-    )
-        
+                        )
+
     # Get pretrained model
     pretrained_path = config['pretrained_path']
     pretrained = None
@@ -59,7 +60,7 @@ def train(config):
     # Train from pretrained if it is not None
     if pretrained is not None:
         model.load_state_dict(pretrained['model_state_dict'])
-    
+
     model = model.to(device)
     parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'The model has {parameters} trainable parameters.')
@@ -67,25 +68,25 @@ def train(config):
     # Define loss
     random.seed(config['seed'])
     #loss = nn.CrossEntropyLoss(ignore_index=src_pad_idx)
-    loss = TokenCrossEntropyLoss()
+    loss = TokenCrossEntropyLoss(pad_idx=src_pad_idx)
     loss = loss.to(device)
 
     # Define metrics
     random.seed(config['seed'])
     metric = BLEUMetric()
 
-    # Define Optimizer 
+    # Define Optimizer
     random.seed(config['seed'])
-    optimizer = Adam(model.parameters(), 
-                    lr=config['trainer']['lr'],
-                )
-                    
+    optimizer = Adam(model.parameters(),
+                     lr=config['trainer']['lr'],
+                     )
+
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-                            optimizer=optimizer,
-                            verbose=True,
-                            factor=config['optimizer']['factor'],
-                            patience=config['optimizer']['patience']
-                        )
+        optimizer=optimizer,
+        verbose=True,
+        factor=config['optimizer']['factor'],
+        patience=config['optimizer']['patience']
+    )
 
     print('Start training ...')
 
@@ -100,11 +101,12 @@ def train(config):
                       optimizer=optimizer,
                       scheduler=scheduler,
                       config=config
-                    )
-    
-    # Start to train 
+                      )
+
+    # Start to train
     random.seed(config['seed'])
     trainer.train()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

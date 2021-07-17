@@ -117,20 +117,6 @@ class MultiHeadAttention(nn.Module):
 
         return x  # [b, seq_len, d_model]
 
-    def split(self, tensor):
-        """
-        Split tensor by number of head
-
-        @tensor: [b, length, d_model]
-        @return: [b, head, length, d_tensor]
-
-        """
-        b, length, d_model = tensor.size()
-        d_tensor = d_model // self.n_head
-        tensor = tensor.reshape(b, self.n_head, length, d_tensor)
-        return tensor
-
-
 class PositionwiseFeedForward(nn.Module):
     '''
     Fully connected feed-forward network
