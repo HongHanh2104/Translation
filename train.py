@@ -23,16 +23,18 @@ def train(config):
 
     # Build dataset
     random.seed(config['seed'])
-    print('Building dataset ...')
-    data = Multi30kLoader(ext=('.en', '.de'))
-    train, val, _ = data.create_dataset()
-    data.build_vocab(data=train, min_freq=2)
-    train_iter, val_iter, _ = data.make_iter(
-        batch_size=config['dataset']['train']['batch_size'],
-        device=device
-    )
-    src_pad_idx, trg_pad_idx = data.get_pad_idx()
-    enc_voc_size, dec_voc_size = data.get_voc_size()
+    # print('Building dataset ...')
+    # data = Multi30kLoader(ext=('.en', '.de'))
+    # train, val, _ = data.create_dataset()
+    # data.build_vocab(data=train, min_freq=2)
+    # train_iter, val_iter, _ = data.make_iter(
+    #     batch_size=config['dataset']['train']['batch_size'],
+    #     device=device
+    # )
+    # src_pad_idx, trg_pad_idx = data.get_pad_idx()
+    # enc_voc_size, dec_voc_size = data.get_voc_size()
+
+    
 
     # Define model
     random.seed(config['seed'])

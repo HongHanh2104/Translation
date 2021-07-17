@@ -49,6 +49,9 @@ class IndexDictionary:
 
         return vocab_tokens, token_counts
     
+    def get_vocab_size(self):
+        return self.vocab_size
+
     def save(self, data_dir):
         vocab_filepath = os.path.join(data_dir, f'vocab-{self.mode}.txt')
         with open(vocab_filepath, 'w') as file:

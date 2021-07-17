@@ -81,27 +81,29 @@ def build_vocab(root_dir, save_data_dir, phase, limit=None):
 
 def create_input_target(root_dir, phase, limit=None):
     tokenized_src, tokenized_trg = tokenize_data(root_dir, phase, limit)
-    inputs = []
+    #inputs = []
     targets = []
     for i in range(len(tokenized_trg)):
         full_trg = [START_TOKEN] + tokenized_trg[i] + [END_TOKEN]
-        inputs.append(full_trg[:-1])
-        targets.append(full_trg[1:])
+        targets.append(full_trg)
+        #inputs.append(full_trg[:-1])
+        #targets.append(full_trg[1:])
     
-    return tokenized_src, inputs, targets
+    return tokenized_src, targets
 
 def create_index(root_dir, src_dict, trg_dict):
     join_inds = lambda indexes: ' '.join(str(index) for index in indexes)
     
     for phase in ('train', 'val'):
-        srcs, inps, trgs = create_input_target(root_dir, phase)
+        srcs, trgs = create_input_target(root_dir, phase)
 
         with open(os.path.join(root_dir, f'indexed-{phase}.txt'), 'w') as file:
             for i in range(len(srcs)):
                 indexed_srcs = join_inds(src_dict.index_sentence(srcs[i]))
-                indexed_inps = join_inds(trg_dict.index_sentence(inps[i]))
+                #indexed_inps = join_inds(trg_dict.index_sentence(inps[i]))
                 indexed_trgs = join_inds(trg_dict.index_sentence(trgs[i]))
-                file.write(f'{indexed_srcs}\t{indexed_inps}\t{indexed_trgs}\n')
+                #file.write(f'{indexed_srcs}\t{indexed_inps}\t{indexed_trgs}\n')
+                file.write(f'{indexed_srcs}\t{indexed_trgs}\n')
     print('Complete create index.')
 
 if __name__ == "__main__":
