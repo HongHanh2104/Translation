@@ -32,8 +32,9 @@ class IndexDictionary:
         # #### vocab_tokens (list of str): word list 
         # #### token_counts (list of number): frequent counter of each corresponding word
         counter = Counter()
-        for token in iterable:
-            counter[token] += 1
+        for item in iterable:
+            for token in item:
+                counter[token] += 1
         
         if vocab_size is not None:
             most_common_vocabs = counter.most_common(vocab_size - len(self.special_tokens))
@@ -80,7 +81,7 @@ class IndexDictionary:
         return instance
 
 if __name__ == "__main__":
-    from text_datasets import *
+    #from text_datasets import *
     from preprocess import source_tokens_generator, target_tokens_generator
     
     path = 'data/test'
@@ -95,9 +96,9 @@ if __name__ == "__main__":
 
     # indexed_translation_dataset = IndexedInputTargetTranslationDataset(path, 'train')
     # srcs, inps, trgs = indexed_translation_dataset[0]
-    src_dict = IndexDictionary.load(path, mode='source')
-    trg_dict = IndexDictionary.load(path, mode='target')
+    # src_dict = IndexDictionary.load(path, mode='source')
+    # trg_dict = IndexDictionary.load(path, mode='target')
 
-    IndexedInputTargetTranslationDataset.prepare(path, src_dict, trg_dict)
-    indexed_translation_dataset = IndexedInputTargetTranslationDataset(path, 'train')
-    print(indexed_translation_dataset[1])
+    # IndexedInputTargetTranslationDataset.prepare(path, src_dict, trg_dict)
+    # indexed_translation_dataset = IndexedInputTargetTranslationDataset(path, 'train')
+    # print(indexed_translation_dataset[1])

@@ -16,8 +16,8 @@ if __name__ == '__main__':
  
     #print(enc_voc_size, dec_voc_size)
 
-    # for i, b in enumerate(train_iter):
-    #     print("src: ", b.src)
-    #     print("*"*50)
-    #     print("trg: ", b.trg) 
-    #     break                                   
+    for i, b in enumerate(train_iter):
+        print("src: ", b.src)
+        print("*"*50)
+        print("trg: ", b.trg) 
+        break                                   
