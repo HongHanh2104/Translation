@@ -17,15 +17,15 @@ optimizer:
     # adam_eps: !!float 1e-8
     patience: 10
     warmup: 10
-    clip: 1.0
+    # clip: 1.0
     factor: 0.5
 dataset:
     root_dir: ./data/en-vi/processed-data
     train:
-        batch_size: 8
+        batch_size: 16
         shuffle: True
-        clip_grads: True
+        clip_grads: False
         num_workers: 8
     val:
-        batch_size: 8
+        batch_size: 16
         num_workers: 8
