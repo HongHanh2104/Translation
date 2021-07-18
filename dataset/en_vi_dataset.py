@@ -72,6 +72,11 @@ class EN_VIDataset(data.Dataset):
             for line in file:
                 self.trg_data.append(line)
         
+        self.rdrsegmenter = VnCoreNLP("../vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
+        self.vi_tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base", use_fast=False)
+        self.en_tokenizer = AutoTokenizer.from_pretrained('bert-base-cased', use_fast=False)
+        
+        
     def __getitem__(self, idx):
         
         src, trg = self.src_data[idx], self.trg_data[idx]
@@ -90,16 +95,13 @@ class EN_VIDataset(data.Dataset):
     
     def _tokenize_trg_data(self, trg_sen):
         preprocesed_sen = ''
-        rdrsegmenter = VnCoreNLP("../vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
-        sentences = rdrsegmenter.tokenize(trg_sen)
+        sentences = self.rdrsegmenter.tokenize(trg_sen)
         for sentence in sentences:
             preprocesed_sen += " ".join(sentence) + ' '
 
-        tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base", use_fast=False)
-        token = tokenizer.encode(preprocesed_sen)  #(line, padding=False, max_length=1000)["input_ids"]
+        token = self.vi_tokenizer.encode(preprocesed_sen)  #(line, padding=False, max_length=1000)["input_ids"]
         return token
     
     def _tokenize_src_data(self, src_sen):
-        tokenizer = AutoTokenizer.from_pretrained('bert-base-cased', use_fast=False)
-        token = tokenizer.encode(src_sen)  #(line, padding=False, max_length=1000)["input_ids"]
+        token = self.en_tokenizer.encode(src_sen)  #(line, padding=False, max_length=1000)["input_ids"]
         return token
