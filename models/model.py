@@ -80,7 +80,8 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, n_src_vocab,
+    def __init__(self, 
+                 n_src_vocab,
                  n_trg_vocab,
                  src_pad_idx,
                  trg_pad_idx,
@@ -92,6 +93,7 @@ class Transformer(nn.Module):
                  dropout=0.1):
         super().__init__()
         self.src_pad_idx, self.trg_pad_idx = src_pad_idx, trg_pad_idx
+        self.max_len = max_len
 
         self.encoder = Encoder(n_src_vocab=n_src_vocab,
                                max_len=max_len,
@@ -114,6 +116,7 @@ class Transformer(nn.Module):
     def forward(self, src_seq, trg_seq):
         # src_seq: [batch, src_len]
         # trg_seq: [batch, trg_len]
+        
         src_mask = get_pad_mask(src_seq, self.src_pad_idx)
         trg_mask = get_pad_mask(
             trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)

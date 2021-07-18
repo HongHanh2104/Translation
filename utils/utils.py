@@ -5,9 +5,19 @@ import torch
 PAD_INDEX = 0
 
 def idx_to_word(x, vocab):
+    # words = []
+    # for i in x:
+    #     word = vocab.itos[i]
+    #     if '<' not in word:
+    #         words.append(word)
+    # words = " ".join(words)
+
     words = []
-    for i in x:
-        word = vocab.itos[i]
+    key_list = list(vocab.keys())
+    value_list = list(vocab.values())
+
+    for item in x:
+        word = key_list[value_list.index(item)]
         if '<' not in word:
             words.append(word)
     words = " ".join(words)

@@ -21,7 +21,7 @@ class TransformerEmbedding(nn.Module):
                  padding_idx=1,
                  dropout=0.1):
         super(TransformerEmbedding, self).__init__()
-
+        
         self.d_model = d_model
 
         # Token embedding
@@ -51,7 +51,10 @@ class TransformerEmbedding(nn.Module):
     def forward(self, x):
         # x: [b, seq_len]
         _, length = x.shape
+        
         x = self.embedding(x) * math.sqrt(self.d_model)
+        #print(f'length: {length}')
+        #print(x.shape)
         x = x + self.pe[:, :length]
         x = self.dropout(x)
 

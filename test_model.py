@@ -6,11 +6,11 @@ if __name__ == '__main__':
     dev_id = 'cuda' if torch.cuda.is_available() else 'cpu'
     device = torch.device(dev_id)
 
-    model = Transformer(n_src_vocab=100,
-                        n_trg_vocab=100,
-                        src_pad_idx=1,
-                        trg_pad_idx=1,
-                        max_len=5000,
+    model = Transformer(n_src_vocab=54173,
+                        n_trg_vocab=25620,
+                        src_pad_idx=0,
+                        trg_pad_idx=0,
+                        max_len=256,
                         d_model=512,
                         d_ffn=2048,
                         n_layer=6,
@@ -21,7 +21,9 @@ if __name__ == '__main__':
     parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'The model has {parameters} trainable parameters.')
 
-    src_seq = torch.randint(50, (1, 5)).to(device)
-    trg_seq = torch.randint(50, (1, 5)).to(device)
-    pred = model(src_seq, trg_seq)
+    src_seq = torch.randint(50, (8, 200)).to(device)
+    src_seq = src_seq[:, :100]
+    print(src_seq.shape)
+    trg_seq = torch.randint(50, (8, 200)).to(device)
+    #pred = model(src_seq, trg_seq)
     #print(pred.shape)

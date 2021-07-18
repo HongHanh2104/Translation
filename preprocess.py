@@ -100,9 +100,7 @@ def create_index(root_dir, src_dict, trg_dict):
         with open(os.path.join(root_dir, f'indexed-{phase}.txt'), 'w') as file:
             for i in range(len(srcs)):
                 indexed_srcs = join_inds(src_dict.index_sentence(srcs[i]))
-                #indexed_inps = join_inds(trg_dict.index_sentence(inps[i]))
                 indexed_trgs = join_inds(trg_dict.index_sentence(trgs[i]))
-                #file.write(f'{indexed_srcs}\t{indexed_inps}\t{indexed_trgs}\n')
                 file.write(f'{indexed_srcs}\t{indexed_trgs}\n')
     print('Complete create index.')
 
@@ -138,17 +136,5 @@ if __name__ == "__main__":
 
     create_index(save_data_dir, src_dict, trg_dict)
     
-    # tokenized_dataset = TokenizedTranslationDataset(args.save_data_dir, 'train')
-    # #print(tokenized_dataset[0])
-    # src_generator = source_tokens_generator(tokenized_dataset)
-    # src_dict = IndexDictionary(src_generator, mode='source')
-    # trg_generator = target_tokens_generator(tokenized_dataset)
-    # trg_dict = IndexDictionary(trg_generator, mode='target')
-    # src_dict.save(args.save_data_dir)
-    # trg_dict.save(args.save_data_dir)
-
-    # IndexedInputTargetTranslationDataset.prepare(args.save_data_dir, src_dict, trg_dict)
-
-    # print('Done dataset preparation')
-
+    
 

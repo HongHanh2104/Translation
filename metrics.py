@@ -99,8 +99,19 @@ class BLEUMetric:
         return 100 * self._compute_bleu_score(stats)
 
 if __name__ == '__main__':
-    metric = BLEUMetric()
-    reference = ['this', 'is', 'a', 'ship']
-    hypothesis = ['this', 'is', 'an', 'ship']
-    result = metric.get_bleu(hypothesis, reference)
-    print(result)
+    from nltk.translate.bleu_score import sentence_bleu
+    import nltk
+
+    hypothesis = [2, 3, 5, 9]
+    reference = [2, 3, 4, 9]
+
+    bleu_score = nltk.translate.bleu_score.corpus_bleu(
+                    [[reference]], 
+                    [hypothesis],
+                    smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
+    print(bleu_score)
+
+
+
+
+    

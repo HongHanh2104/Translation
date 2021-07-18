@@ -12,7 +12,7 @@ from utils.utils import idx_to_word
 class Trainer():
     def __init__(self, model, 
                  device,
-                 data,
+                 trg_vocab,
                  iterator,
                  loss, 
                  metric, 
@@ -25,7 +25,7 @@ class Trainer():
         
         self.model = model
         self.train_iter, self.val_iter = iterator
-        self.data = data
+        self.trg_vocab = trg_vocab
 
         self.loss = loss
         self.metric = metric
@@ -39,8 +39,8 @@ class Trainer():
         print(self.train_id)
 
         self.save_dir = os.path.join('checkpoints', self.train_id)
-        if not os.path.exists(self.save_dir):
-            os.makedirs(self.save_dir)
+        # if not os.path.exists(self.save_dir):
+        #     os.makedirs(self.save_dir)
         
         # Logger
         self.tsboard = TensorboardLogger(path=self.save_dir)
@@ -69,11 +69,13 @@ class Trainer():
 
         # Setup progress bar
         progress_bar = tqdm(iterator)
-        for i, batch in enumerate(progress_bar):
+        for i, (src, trg) in enumerate(progress_bar):
             # 1: Load sources, inputs, and targets
-            src = batch.src.to(self.device)
-            trg = batch.trg.to(self.device)
-
+            # src = batch.src.to(self.device)
+            # trg = batch.trg.to(self.device)
+            src = src.to(self.device)
+            trg = trg.to(self.device)
+            
             # 2: Clear gradients from previous iteration
             self.optimizer.zero_grad()
             
@@ -138,11 +140,14 @@ class Trainer():
         # Setup progress bar
         progress_bar = tqdm(iterator)
     
-        for i, batch in enumerate(progress_bar):
+        for i, (src, trg) in enumerate(progress_bar):
             # 1: Load sources, inputs, and targets
-            src = batch.src.to(self.device)
-            trg = batch.trg.to(self.device)
-                
+            # src = batch.src.to(self.device)
+            # trg = batch.trg.to(self.device)
+            src = src.to(self.device)
+            trg = trg.to(self.device)
+            copy_trg = trg
+
             # 2: Get network outputs
             out = self.model(src, trg[:, :-1])
             trg = trg[:, 1:]
@@ -160,15 +165,17 @@ class Trainer():
                 
             total_bleu = []
                 
-            for j in range(src.size()[0]):
-                trg_words = idx_to_word(x=batch.trg[j], vocab=self.data.target.vocab)
+            for j in range(copy_trg.size()[0]):
+                
+                trg_words = idx_to_word(x=copy_trg[j], vocab=self.trg_vocab.get_vocab_dict())
                 out_words = out[j].max(dim=1)[1]
-                out_words = idx_to_word(x=out_words, vocab=self.data.target.vocab)
+                out_words = idx_to_word(x=out_words, vocab=self.trg_vocab.get_vocab_dict())
                 bleu = self.metric.get_bleu(hypothesis=out_words.split(), reference=trg_words.split())
                 total_bleu.append(bleu)
-            
+                
             score_bleu = sum(total_bleu) / len(total_bleu)
             batch_bleu.append(score_bleu)
+            
 
         print("++++++++++++++ Evaluation result ++++++++++++++")
         loss = sum(total_loss) / sum(total_tokens)

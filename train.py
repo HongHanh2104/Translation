@@ -1,11 +1,15 @@
 from models.model import Transformer
-from dataset.multi30k import Multi30kLoader
+#from dataset.multi30k import Multi30kLoader
+from dataset.en_vi_dataset import EN_VIDataset
 from losses import TokenCrossEntropyLoss
 from metrics import BLEUMetric
 from trainer import Trainer
+from dictionaries import IndexDictionary
+from utils.utils import input_target_collate_fn
 
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from torch import optim
 from torch.optim import Adam
 
@@ -34,7 +38,45 @@ def train(config):
     # src_pad_idx, trg_pad_idx = data.get_pad_idx()
     # enc_voc_size, dec_voc_size = data.get_voc_size()
 
+    print('Building vocabularies ...')
+    src_dict = IndexDictionary.load(
+                    data_dir=config['dataset']['root_dir'],
+                    mode='source')
+    enc_voc_size = src_dict.get_vocab_size()
+    print(f'Source vocab size: {enc_voc_size}')
     
+    trg_dict = IndexDictionary.load(
+                    data_dir=config['dataset']['root_dir'],
+                    mode='target')
+    dec_voc_size = trg_dict.get_vocab_size()
+    print(f'Target vocab size: {dec_voc_size}')
+    
+    print('Building dataset ...')
+    train_data = EN_VIDataset(
+                    data_dir= config['dataset']['root_dir'],
+                    phase='train')
+    
+    val_data = EN_VIDataset(
+                    data_dir= config['dataset']['root_dir'],
+                    phase='val')
+    
+    train_dataloader = DataLoader(
+                    train_data,
+                    batch_size=config['dataset']['train']['batch_size'],
+                    shuffle=True,
+                    num_workers=config['dataset']['train']['num_workers'],
+                    collate_fn=input_target_collate_fn,
+                    )
+
+    val_dataloader = DataLoader(
+                    val_data,
+                    batch_size=config['dataset']['val']['batch_size'],
+                    shuffle=False,
+                    num_workers=config['dataset']['val']['num_workers'],
+                    collate_fn=input_target_collate_fn,
+                    )
+    src_pad_idx = 0
+    trg_pad_idx = 0
 
     # Define model
     random.seed(config['seed'])
@@ -96,8 +138,8 @@ def train(config):
     random.seed(config['seed'])
     trainer = Trainer(model=model,
                       device=device,
-                      data=data,
-                      iterator=(train_iter, val_iter),
+                      trg_vocab=trg_dict,
+                      iterator=(train_dataloader, val_dataloader),
                       loss=loss,
                       metric=metric,
                       optimizer=optimizer,

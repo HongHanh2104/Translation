@@ -3,11 +3,12 @@ from torch.utils import data
 import os
 
 class EN_VIDataset(data.Dataset):
-    def __init__(self, data_dir, phase, vocab_size=None, limit=None):
+    def __init__(self, data_dir, phase, vocab_size=None, limit=None, max_len=256):
         self.data = []
         self.unk_index = 1
         self.vocab_size = vocab_size
         self.limit = limit
+        self.max_len = max_len
 
         check_index = lambda index: index if index < vocab_size else self.unk_index
 
@@ -27,10 +28,15 @@ class EN_VIDataset(data.Dataset):
                     break
         
     def __getitem__(self, item):
-        if self.limit is not None and item >= self.limie:
+        if self.limit is not None and item >= self.limit:
             raise IndexError()
         
         indexed_srcs, indexed_trgs = self.data[item]
+        if len(indexed_srcs) > self.max_len:
+            indexed_srcs = indexed_srcs[:self.max_len]
+        if len(indexed_trgs) > self.max_len:
+            indexed_trgs = indexed_trgs[:self.max_len]
+        
         return indexed_srcs, indexed_trgs
     
     def __len__(self):

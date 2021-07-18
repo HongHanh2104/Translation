@@ -52,6 +52,9 @@ class IndexDictionary:
     def get_vocab_size(self):
         return self.vocab_size
 
+    def get_vocab_dict(self):
+        return self.token_index_dict
+
     def save(self, data_dir):
         vocab_filepath = os.path.join(data_dir, f'vocab-{self.mode}.txt')
         with open(vocab_filepath, 'w') as file:
@@ -84,24 +87,6 @@ class IndexDictionary:
         return instance
 
 if __name__ == "__main__":
-    #from text_datasets import *
-    from preprocess import source_tokens_generator, target_tokens_generator
     
     path = 'data/test'
-    # translation_dataset = TranslationDataset(path, 'train')
-    # tokenized_dataset = TokenizedTranslationDataset(path, 'train')
-    # src_generator = source_tokens_generator(tokenized_dataset)
-    # src_dict = IndexDictionary(src_generator, mode='sources')
-    # trg_generator = target_tokens_generator(tokenized_dataset)
-    # trg_dict = IndexDictionary(trg_generator, mode='target')
-
-    # IndexedInputTargetTranslationDataset.prepare(path, src_dict, trg_dict)
-
-    # indexed_translation_dataset = IndexedInputTargetTranslationDataset(path, 'train')
-    # srcs, inps, trgs = indexed_translation_dataset[0]
-    # src_dict = IndexDictionary.load(path, mode='source')
-    # trg_dict = IndexDictionary.load(path, mode='target')
-
-    # IndexedInputTargetTranslationDataset.prepare(path, src_dict, trg_dict)
-    # indexed_translation_dataset = IndexedInputTargetTranslationDataset(path, 'train')
-    # print(indexed_translation_dataset[1])
+    

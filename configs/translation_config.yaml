@@ -1,4 +1,4 @@
-id: Transformers-en-to-de
+id: Transformers-en-to-vi
 seed: 2104
 pretrained_path: null
 model:
@@ -20,10 +20,12 @@ optimizer:
     clip: 1.0
     factor: 0.5
 dataset:
-    root_dir: null
+    root_dir: ./data/en-vi/processed-data
     train:
-        batch_size: 256
+        batch_size: 8
         shuffle: True
         clip_grads: True
+        num_workers: 8
     val:
-        batch_size: 2048
+        batch_size: 24
+        num_workers: 8
