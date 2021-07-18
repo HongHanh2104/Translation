@@ -38,14 +38,14 @@ class IndexDictionary:
         
         if vocab_size is not None:
             most_common_vocabs = counter.most_common(vocab_size - len(self.special_tokens))
-            frequent_tokens = [token for token, count in most_common_vocabs]
+            frequent_tokens = [token for token, _ in most_common_vocabs]
             vocab_tokens = self.special_tokens + frequent_tokens
-            token_counts = [0] * len(self.special_tokens) + [count for token, count in most_common_vocabs]
+            token_counts = [0] * len(self.special_tokens) + [count for _, count in most_common_vocabs]
 
         else:
-            all_tokens = [token for token, count in counter.items()]
+            all_tokens = [token for token, _ in counter.items()]
             vocab_tokens = self.special_tokens + all_tokens
-            token_counts = [0] * len(self.special_tokens) + [count for token, count in counter.items()]
+            token_counts = [0] * len(self.special_tokens) + [count for _, count in counter.items()]
 
         return vocab_tokens, token_counts
     

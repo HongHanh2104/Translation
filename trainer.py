@@ -5,9 +5,10 @@ from tqdm import tqdm
 from datetime import datetime
 import os 
 import json
+import nltk
 
 from loggers import TensorboardLogger
-from utils.utils import idx_to_word
+from utils.utils import preprocess
 
 class Trainer():
     def __init__(self, model, 
@@ -39,8 +40,8 @@ class Trainer():
         print(self.train_id)
 
         self.save_dir = os.path.join('checkpoints', self.train_id)
-        # if not os.path.exists(self.save_dir):
-        #     os.makedirs(self.save_dir)
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
         
         # Logger
         self.tsboard = TensorboardLogger(path=self.save_dir)
@@ -114,12 +115,7 @@ class Trainer():
                     running_loss.clear()
                     running_tokens.clear()
 
-                # 8: Update metric
-                #outs = outs.detach()
-                #trgs = trgs.detach()
-                #metric, _ = self.metric.calculate(outs, trgs)
-                #running_metric.append(metric)
-        
+                
         print('++++++++++++++ Training result ++++++++++++++')
         avg_loss = sum(total_loss) / sum(total_tokens)
         print('Loss: ', avg_loss) 
@@ -132,14 +128,16 @@ class Trainer():
         # 0: Record loss during training process
         total_loss = []
         total_tokens = []
-        batch_bleu = []
-        
+        #batch_bleu = []
+        refs = [] # references for BLEU metric
+        hyps = [] # hypothesis (candidate) for BLEU metric
+
         # Switch model to training mode
         self.model.eval()
 
         # Setup progress bar
         progress_bar = tqdm(iterator)
-    
+
         for i, (src, trg) in enumerate(progress_bar):
             # 1: Load sources, inputs, and targets
             # src = batch.src.to(self.device)
@@ -164,25 +162,31 @@ class Trainer():
             trg = trg.detach()
                 
             total_bleu = []
-                
+
             for j in range(copy_trg.size()[0]):
+                _trg, _out = preprocess(copy_trg[j].to('cpu').numpy(),
+                                        out[j].max(dim=1)[1].to('cpu').numpy())
+                refs.append([_trg])
+                hyps.append(_out)
                 
-                trg_words = idx_to_word(x=copy_trg[j], vocab=self.trg_vocab.get_vocab_dict())
-                out_words = out[j].max(dim=1)[1]
-                out_words = idx_to_word(x=out_words, vocab=self.trg_vocab.get_vocab_dict())
-                bleu = self.metric.get_bleu(hypothesis=out_words.split(), reference=trg_words.split())
-                total_bleu.append(bleu)
-                
-            score_bleu = sum(total_bleu) / len(total_bleu)
-            batch_bleu.append(score_bleu)
-            
+            # score_bleu = sum(total_bleu) / len(total_bleu)
+            # batch_bleu.append(score_bleu)
+            # print(refs)
+            # print('*'*50)
+            # print(hyps)
+            # break
 
         print("++++++++++++++ Evaluation result ++++++++++++++")
         loss = sum(total_loss) / sum(total_tokens)
         print('Loss: ', loss)
-        accuracy = sum(batch_bleu) / len(batch_bleu)
-        print('Accuracy: ', accuracy)
+        #accuracy = sum(batch_bleu) / len(batch_bleu)
         
+        accuracy = self.metric.corpus_bleu(
+                    refs, 
+                    hyps,
+                    smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
+        
+
         # Upload tensorboard
         self.tsboard.update_loss('val', loss, epoch)
         self.tsboard.update_metric('val', accuracy, epoch)
@@ -198,7 +202,8 @@ class Trainer():
 
             # Train phase
             train_loss = self.train_epoch(epoch, self.train_iter)
-            
+            #train_loss = 0.0
+
             # Eval phase
             val_loss, bleu = self.val_epoch(epoch, self.val_iter)
             

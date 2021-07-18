@@ -9,7 +9,7 @@ model:
     max_len: 256
     dropout: 0.1
 trainer:
-    nepochs: 100
+    nepochs: 50
     val_step: 1
     log_step: 30
     lr: !!float 1e-4
@@ -27,5 +27,5 @@ dataset:
         clip_grads: True
         num_workers: 8
     val:
-        batch_size: 24
+        batch_size: 8
         num_workers: 8

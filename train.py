@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader
 from torch import optim
 from torch.optim import Adam
 
+import nltk
+
 import argparse
 from datetime import datetime
 import random
@@ -40,41 +42,41 @@ def train(config):
 
     print('Building vocabularies ...')
     src_dict = IndexDictionary.load(
-                    data_dir=config['dataset']['root_dir'],
-                    mode='source')
+        data_dir=config['dataset']['root_dir'],
+        mode='source')
     enc_voc_size = src_dict.get_vocab_size()
     print(f'Source vocab size: {enc_voc_size}')
-    
+
     trg_dict = IndexDictionary.load(
-                    data_dir=config['dataset']['root_dir'],
-                    mode='target')
+        data_dir=config['dataset']['root_dir'],
+        mode='target')
     dec_voc_size = trg_dict.get_vocab_size()
     print(f'Target vocab size: {dec_voc_size}')
-    
+
     print('Building dataset ...')
     train_data = EN_VIDataset(
-                    data_dir= config['dataset']['root_dir'],
-                    phase='train')
-    
+        data_dir=config['dataset']['root_dir'],
+        phase='train')
+
     val_data = EN_VIDataset(
-                    data_dir= config['dataset']['root_dir'],
-                    phase='val')
-    
+        data_dir=config['dataset']['root_dir'],
+        phase='val')
+
     train_dataloader = DataLoader(
-                    train_data,
-                    batch_size=config['dataset']['train']['batch_size'],
-                    shuffle=True,
-                    num_workers=config['dataset']['train']['num_workers'],
-                    collate_fn=input_target_collate_fn,
-                    )
+        train_data,
+        batch_size=config['dataset']['train']['batch_size'],
+        shuffle=True,
+        num_workers=config['dataset']['train']['num_workers'],
+        collate_fn=input_target_collate_fn,
+    )
 
     val_dataloader = DataLoader(
-                    val_data,
-                    batch_size=config['dataset']['val']['batch_size'],
-                    shuffle=False,
-                    num_workers=config['dataset']['val']['num_workers'],
-                    collate_fn=input_target_collate_fn,
-                    )
+        val_data,
+        batch_size=config['dataset']['val']['batch_size'],
+        shuffle=False,
+        num_workers=config['dataset']['val']['num_workers'],
+        collate_fn=input_target_collate_fn,
+    )
     src_pad_idx = 0
     trg_pad_idx = 0
 
@@ -117,7 +119,8 @@ def train(config):
 
     # Define metrics
     random.seed(config['seed'])
-    metric = BLEUMetric()
+    #metric = BLEUMetric()
+    metric = nltk.translate.bleu_score
 
     # Define Optimizer
     random.seed(config['seed'])

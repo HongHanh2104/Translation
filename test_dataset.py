@@ -36,7 +36,9 @@ if __name__ == '__main__':
                                 batch_size=8,
                                 device='cuda',
                                 shuffle=True,
-                                sort_key=False
+                                sort=False,
+                                sort_within_batch=True,
+                                sort_key=lambda x: len(x['text']),
                             )
     # trg = val_data[0][1] 
     # trg = trg[1:]

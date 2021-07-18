@@ -1,4 +1,5 @@
 import math
+from utils.utils import END_INDEX
 import numpy as np
 from collections import Counter
 
@@ -98,18 +99,38 @@ class BLEUMetric:
         #print(stats)
         return 100 * self._compute_bleu_score(stats)
 
+def preprocess(trg, out):
+    END_INDEX = 3
+    trg_end_pos = np.where(trg == END_INDEX)[0][0]
+    trg = trg[:trg_end_pos + 1]
+    out_end_pos = np.where(out == END_INDEX)
+    if len(out_end_pos[0]) > 0:
+        out_end_pos = out_end_pos[0][0]
+        out = out[:out_end_pos + 1]
+    return trg, out
+
 if __name__ == '__main__':
-    from nltk.translate.bleu_score import sentence_bleu
-    import nltk
+    trg = np.array([5, 9, 8, 7, 7, 3, 0, 0, 0, 0])
+    out = np.array([6, 8, 7, 9, 4, 4, 3, 200, 200, 200, 200])
+    result = preprocess(trg, out)
+    
+    print(result[0])
+    print(result[1])
 
-    hypothesis = [2, 3, 5, 9]
-    reference = [2, 3, 4, 9]
+# if __name__ == '__main__':
+#     from nltk.translate.bleu_score import sentence_bleu
+#     import nltk
 
-    bleu_score = nltk.translate.bleu_score.corpus_bleu(
-                    [[reference]], 
-                    [hypothesis],
-                    smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
-    print(bleu_score)
+#     metric = nltk.translate.bleu_score
+
+#     hypothesis = [[2, 3, 4, 9], [5, 9, 7, 3]]
+#     reference = [[[2, 3, 4, 9]], [[5, 9, 7, 3]]]
+
+#     bleu_score = metric.corpus_bleu(
+#                     reference, 
+#                     hypothesis,
+#                     smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
+#     print(bleu_score)
 
 
 

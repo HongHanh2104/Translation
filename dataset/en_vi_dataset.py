@@ -31,13 +31,13 @@ class EN_VIDataset(data.Dataset):
         if self.limit is not None and item >= self.limit:
             raise IndexError()
         
-        indexed_srcs, indexed_trgs = self.data[item]
-        if len(indexed_srcs) > self.max_len:
-            indexed_srcs = indexed_srcs[:self.max_len]
-        if len(indexed_trgs) > self.max_len:
-            indexed_trgs = indexed_trgs[:self.max_len]
+        indexed_src, indexed_trg = self.data[item]
+        if len(indexed_src) > self.max_len:
+            indexed_src = indexed_src[:self.max_len]
+        if len(indexed_trg) > self.max_len:
+            indexed_trg = indexed_trg[:self.max_len]
         
-        return indexed_srcs, indexed_trgs
+        return indexed_src, indexed_trg
     
     def __len__(self):
         if self.limit is None:
