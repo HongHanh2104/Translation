@@ -1,8 +1,12 @@
+from preprocess import preprocess_vi_data
 import torch
 from torch.utils import data
 import os
 
-class EN_VIDataset(data.Dataset):
+from vncorenlp import VnCoreNLP
+from transformers import AutoModel, AutoTokenizer
+
+class _EN_VIDataset(data.Dataset):
     def __init__(self, data_dir, phase, vocab_size=None, limit=None, max_len=256):
         self.data = []
         self.unk_index = 1
@@ -43,3 +47,59 @@ class EN_VIDataset(data.Dataset):
         if self.limit is None:
             return len(self.data)
         else: return self.limit
+
+class EN_VIDataset(data.Dataset):
+    def __init__(self, 
+                 data_dir, 
+                 phase, 
+                 vocab_size=None, 
+                 max_len=256):
+        self.src_data = []
+        self.trg_data = []
+        self.unk_index = 1
+        self.vocab_size = vocab_size
+        self.max_len = max_len
+
+        check_index = lambda index: index if index < vocab_size else self.unk_index
+
+        self.root_path = os.path.join(data_dir, phase)
+
+        with open(os.path.join(self.root_path, 'train.en')) as file:
+            for line in file:
+                self.src_data.append(line)
+        
+        with open(os.path.join(self.root_path, 'train.vi')) as file:
+            for line in file:
+                self.trg_data.append(line)
+        
+    def __getitem__(self, idx):
+        
+        src, trg = self.src_data[idx], self.trg_data[idx]
+        if len(src) > self.max_len:
+            indexed_src = src[:self.max_len]
+        if len(trg) > self.max_len:
+            indexed_trg = trg[:self.max_len]
+        
+        indexed_src = self._tokenize_src_data(src)
+        indexed_trg = self._tokenize_trg_data(trg)
+
+        return torch.tensor(indexed_src), torch.tensor(indexed_trg)
+    
+    def __len__(self):
+        return len(self.src_data)
+    
+    def _tokenize_trg_data(self, trg_sen):
+        preprocesed_sen = ''
+        rdrsegmenter = VnCoreNLP("../vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
+        sentences = rdrsegmenter.tokenize(trg_sen)
+        for sentence in sentences:
+            preprocesed_sen += " ".join(sentence) + ' '
+
+        tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base", use_fast=False)
+        token = tokenizer.encode(preprocesed_sen)  #(line, padding=False, max_length=1000)["input_ids"]
+        return token
+    
+    def _tokenize_src_data(self, src_sen):
+        tokenizer = AutoTokenizer.from_pretrained('bert-base-cased', use_fast=False)
+        token = tokenizer.encode(src_sen)  #(line, padding=False, max_length=1000)["input_ids"]
+        return token

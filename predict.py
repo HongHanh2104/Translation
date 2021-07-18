@@ -91,7 +91,6 @@ if __name__ == '__main__':
             collate_fn=input_target_collate_fn,
     )
 
-
     # Build model 
     print('Building model ...')
     model = Transformer(n_src_vocab=enc_voc_size,

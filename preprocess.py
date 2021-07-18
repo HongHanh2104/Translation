@@ -2,11 +2,15 @@
 from argparse import ArgumentParser
 from dictionaries import IndexDictionary
 import os
+from vncorenlp import VnCoreNLP
+
+import torch
+from transformers import AutoModel, AutoTokenizer
 
 START_TOKEN = '<StartSent>'
 END_TOKEN = '<EndSent>'
 
-def get_data(root_dir, phase, limit=None):
+def _get_data(root_dir, phase, limit=None):
     assert phase in ('train', 'val', 'test'), "Dataset phase must be either 'train' or 'val' or 'test'."
     
     data_name = f'raw-combined-{phase}.txt'
@@ -112,15 +116,71 @@ def create_index_testdata(root_dir, phase):
             file.write(f'{indexed_srcs}\t{indexed_trgs}\n')
     print('Complete create index.')
 
+def get_data(root_dir, data_name, phase, limit=None):
+    assert phase in ('train', 'val', 'test'), "Dataset phase must be either 'train' or 'val' or 'test'."
+    
+    data = []
+    i = 0
+    with open(os.path.join(root_dir, data_name)) as f:
+        for line in f:
+            data.append(line)
+    
+    if limit is not None:
+        data = data[:limit]
+    return data
+
+def preprocess_vi_data(raw_dir, save_dir, vi_data, phase):
+    rdrsegmenter = VnCoreNLP("../vncorenlp/VnCoreNLP-1.1.1.jar", annotators="wseg", max_heap_size='-Xmx500m') 
+    
+    vi_path = os.path.join(raw_dir, phase, vi_data)
+    
+    with open(vi_path) as f:
+        data = f.readlines()
+    
+    with open(os.path.join(save_data_dir, f'raw-vi-{phase}.txt'), 'w') as file:
+        for line in data:
+            result = ''
+            sentences = rdrsegmenter.tokenize(line)
+            for sentence in sentences:
+                result += " ".join(sentence) + ' '
+            save_line = f'{result}\n'
+            file.write(save_line)
+    print(f"Complete preproces vi {phase} data")
+
+def tokenize_vi_data(path, phase):
+    data_name = f'raw-vi-{phase}.txt'
+
+    data = get_data(path, data_name, phase)
+
+    tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base", use_fast=False)
+
+    with open(os.path.join(path, f'index-vi-{phase}.txt'), 'w') as file:
+        for line in data:
+            result = tokenizer.encode(line)  #(line, padding=False, max_length=1000)["input_ids"]
+            save_line = f"{' '.join(list(map(str, result)))}\n"
+            #save_line = f'{result}\n'
+            file.write(save_line)
+    print(f"Complete tokenize vi {phase} data")
+
+def tokenize_en_data(root_dir, save_dir, data_name, phase):
+    
+    data = get_data(os.path.join(root_dir, phase), data_name, phase)
+
+    tokenizer = AutoTokenizer.from_pretrained('bert-base-cased', use_fast=False)
+
+    with open(os.path.join(save_dir, f'index-en-{phase}.txt'), 'w') as file:
+        for line in data:
+            result = tokenizer.encode(line)  #(line, padding=False, max_length=1000)["input_ids"]
+            save_line = f"{' '.join(list(map(str, result)))}\n"
+            file.write(save_line)
+    print(f"Complete tokenize en {phase} data")
 
 if __name__ == "__main__":
     parser = ArgumentParser('Prepare Dataset')
     parser.add_argument('--root_path', type=str)
-    parser.add_argument('--data_src', type=str, default='train.en')
-    parser.add_argument('--data_trg', type=str, default='train.vi')
+    parser.add_argument('--en', type=str, default='train.en') # src
+    parser.add_argument('--vi', type=str, default='train.vi') # trg
     parser.add_argument('--phase', type=str, default='train')
-    #parser.add_argument('--val_src', type=str, default='tst2012.en')
-    #parser.add_argument('--val_trg', type=str, default='tst2012.vi')
     parser.add_argument('--save_folder_name', type=str, default='processed-data')
     parser.add_argument('--share_dictionary', type=bool, default=False)
 
@@ -138,13 +198,13 @@ if __name__ == "__main__":
     #         raw_data_dir, 
     #         save_data_dir)
 
-    # train_data = get_data(save_data_dir, 'train')
-    # val_data = get_data(save_data_dir, 'val')
-
     # src_dict, trg_dict = build_vocab(save_data_dir, save_data_dir, 'train')
 
     # create_index(save_data_dir, src_dict, trg_dict)
     
-    create_index_testdata(save_data_dir, phase=args.phase)
+    #create_index_testdata(save_data_dir, phase=args.phase)
     
+    # preprocess_vi_data(raw_data_dir, save_data_dir, args.vi, args.phase)
+    # tokenize_vi_data(save_data_dir, args.phase)
 
+    tokenize_en_data(raw_data_dir, save_data_dir, args.en, args.phase)

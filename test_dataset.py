@@ -8,36 +8,37 @@ from torch.utils.data import DataLoader
 
 if __name__ == '__main__':
     #data = Multi30kLoader(ext=('.en', '.de'))
-    data_dir = './data/en-vi/processed-data'
+    data_dir = './data/en-vi/raw-data'
 
-    print('Building dictionaries ...')
-    src_dict = IndexDictionary.load(
-                    data_dir=data_dir,
-                    mode='source')
-    print(f'Source vocab size: {src_dict.get_vocab_size()}')
+    # print('Building dictionaries ...')
+    # src_dict = IndexDictionary.load(
+    #                 data_dir=data_dir,
+    #                 mode='source')
+    # print(f'Source vocab size: {src_dict.get_vocab_size()}')
 
-    #print(src_dict.token_index_dict)
+    # #print(src_dict.token_index_dict)
 
-    trg_dict = IndexDictionary.load(
-                    data_dir=data_dir,
-                    mode='target')
-    print(f'Target vocab size: {trg_dict.get_vocab_size()}')
+    # trg_dict = IndexDictionary.load(
+    #                 data_dir=data_dir,
+    #                 mode='target')
+    # print(f'Target vocab size: {trg_dict.get_vocab_size()}')
     
-    # train_data = EN_VIDataset(
+    # test_data = EN_VIDataset(
     #                 data_dir= data_dir,
-    #                 phase='train')
+    #                 phase='test')
+
+    # trg = test_data[0][1] 
+    # trg = trg[1:]
+    # #print(trg_dict.get_idx_to_words_dict())
     
-    test_data = EN_VIDataset(
+    # words = idx_to_word(x=trg, vocab=trg_dict.get_idx_to_words_dict())
+    # print(words)
+
+    train_data = EN_VIDataset(
                     data_dir= data_dir,
-                    phase='test')
-
-    trg = test_data[0][1] 
-    trg = trg[1:]
-    #print(trg_dict.get_idx_to_words_dict())
+                    phase='train')
+    print(train_data[0])
     
-    words = idx_to_word(x=trg, vocab=trg_dict.get_idx_to_words_dict())
-    print(words)
-
     
     # train_dataloader = DataLoader(
     #                 train_data,
