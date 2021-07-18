@@ -1,0 +1,27 @@
+id: Transformers-en-to-vi
+seed: 2104
+pretrained_path: ./checkpoints/Transformers-en-to-vi-2021_07_17-15_52_33
+model_filename: best_bleu-bleu=40.0.pth
+model:
+    d_model: 512
+    d_ffn: 2048
+    n_layer: 6
+    n_head: 8
+    max_len: 256
+    dropout: 0.1
+trainer:
+    nepochs: 50
+    val_step: 1
+    log_step: 30
+    lr: !!float 1e-4
+optimizer:
+    # adam_eps: !!float 1e-8
+    patience: 10
+    warmup: 10
+    # clip: 1.0
+    factor: 0.5
+dataset:
+    root_dir: ./data/en-vi/processed-data
+    test:
+        batch_size: 1
+        num_workers: 8

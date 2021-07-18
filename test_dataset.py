@@ -23,28 +23,20 @@ if __name__ == '__main__':
                     mode='target')
     print(f'Target vocab size: {trg_dict.get_vocab_size()}')
     
-    train_data = EN_VIDataset(
-                    data_dir= data_dir,
-                    phase='train')
+    # train_data = EN_VIDataset(
+    #                 data_dir= data_dir,
+    #                 phase='train')
     
-    val_data = EN_VIDataset(
+    test_data = EN_VIDataset(
                     data_dir= data_dir,
-                    phase='val')
+                    phase='test')
 
-    train_iter, valid_iter = BucketIterator.splits(
-                                (train_data, val_data),
-                                batch_size=8,
-                                device='cuda',
-                                shuffle=True,
-                                sort=False,
-                                sort_within_batch=True,
-                                sort_key=lambda x: len(x['text']),
-                            )
-    # trg = val_data[0][1] 
-    # trg = trg[1:]
-
-    # words = idx_to_word(x=trg, vocab=trg_dict.get_vocab_dict())
-    # print(words)
+    trg = test_data[0][1] 
+    trg = trg[1:]
+    #print(trg_dict.get_idx_to_words_dict())
+    
+    words = idx_to_word(x=trg, vocab=trg_dict.get_idx_to_words_dict())
+    print(words)
 
     
     # train_dataloader = DataLoader(
@@ -55,10 +47,10 @@ if __name__ == '__main__':
     #                 )
 
    
-    for i, (srcs, trgs) in enumerate(train_iter):
-        srcs.to('cuda')
-        trgs.to('cuda')
-        break
+    # for i, (srcs, trgs) in enumerate(train_iter):
+    #     srcs.to('cuda')
+    #     trgs.to('cuda')
+    #     break
     #       break
     #       #print("src: ", b.src)
     #     print("*"*50)

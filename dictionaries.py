@@ -15,6 +15,7 @@ class IndexDictionary:
             self.vocab_tokens, self.token_counts = self._build_vocab(iterable, vocab_size)
             # create a dictionary with {word: counter}
             self.token_index_dict = {token: index for index, token in enumerate(self.vocab_tokens)}
+            self.idx_to_word_dict = {index: token for index, token in enumerate(self.vocab_tokens)}
             self.vocab_size = len(self.vocab_tokens)
 
     def token_to_index(self, token):
@@ -54,6 +55,9 @@ class IndexDictionary:
 
     def get_vocab_dict(self):
         return self.token_index_dict
+    
+    def get_idx_to_words_dict(self):
+        return self.idx_to_word_dict
 
     def save(self, data_dir):
         vocab_filepath = os.path.join(data_dir, f'vocab-{self.mode}.txt')
@@ -82,6 +86,7 @@ class IndexDictionary:
         instance.vocab_tokens = vocab_tokens
         instance.token_counts = token_counts
         instance.token_index_dict = {token: index for index, token in vocab_tokens.items()}
+        instance.idx_to_word_dict = {index: token for index, token in vocab_tokens.items()}
         instance.vocab_size = len(vocab_tokens)
 
         return instance

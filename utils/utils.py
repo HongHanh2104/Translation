@@ -5,19 +5,20 @@ PAD_INDEX = 0
 END_INDEX = 3
 
 def idx_to_word(x, vocab):
-    # words = []
-    # for i in x:
     #     word = vocab.itos[i]
+
+    # words = []
+    # key_list = list(vocab.keys())
+    # value_list = list(vocab.values())
+
+    # for item in x:
+    #     word = key_list[value_list.index(item)]
     #     if '<' not in word:
     #         words.append(word)
     # words = " ".join(words)
-
     words = []
-    key_list = list(vocab.keys())
-    value_list = list(vocab.values())
-
     for item in x:
-        word = key_list[value_list.index(item)]
+        word = vocab[item]
         if '<' not in word:
             words.append(word)
     words = " ".join(words)
