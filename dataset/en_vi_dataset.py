@@ -80,10 +80,6 @@ class EN_VIDataset(data.Dataset):
     def __getitem__(self, idx):
         
         src, trg = self.src_data[idx], self.trg_data[idx]
-        if len(src) > self.max_len:
-            indexed_src = src[:self.max_len]
-        if len(trg) > self.max_len:
-            indexed_trg = trg[:self.max_len]
         
         indexed_src = self._tokenize_src_data(src)
         indexed_trg = self._tokenize_trg_data(trg)
@@ -99,9 +95,9 @@ class EN_VIDataset(data.Dataset):
         for sentence in sentences:
             preprocesed_sen += " ".join(sentence) + ' '
 
-        token = self.vi_tokenizer.encode(preprocesed_sen)  #(line, padding=False, max_length=1000)["input_ids"]
+        token = self.vi_tokenizer(preprocesed_sen, padding='max_length', truncation=True, max_length=self.max_len)["input_ids"]
         return token
     
     def _tokenize_src_data(self, src_sen):
-        token = self.en_tokenizer.encode(src_sen)  #(line, padding=False, max_length=1000)["input_ids"]
+        token = self.en_tokenizer(src_sen, padding='max_length', truncation=True, max_length=self.max_len)["input_ids"]
         return token

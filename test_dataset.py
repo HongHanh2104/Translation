@@ -36,22 +36,18 @@ if __name__ == '__main__':
 
     train_data = EN_VIDataset(
                     data_dir= data_dir,
-                    phase='train')
-    print(train_data[0])
+                    phase='train')    
     
-    
-    # train_dataloader = DataLoader(
-    #                 train_data,
-    #                 batch_size=8,
-    #                 shuffle=True,
-    #                 collate_fn=input_target_collate_fn
-    #                 )
+    train_dataloader = DataLoader(
+                    train_data,
+                    batch_size=8,
+                    shuffle=True,
+                    )
 
-   
-    # for i, (srcs, trgs) in enumerate(train_iter):
-    #     srcs.to('cuda')
-    #     trgs.to('cuda')
-    #     break
+    for i, (srcs, trgs) in enumerate(train_dataloader):
+        srcs.to('cuda')
+        trgs.to('cuda')
+        
     #       break
     #       #print("src: ", b.src)
     #     print("*"*50)
