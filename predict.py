@@ -1,22 +1,28 @@
 import torch
 from torch.utils.data import DataLoader
+import nltk
+from tqdm import tqdm
 
 from dataset.en_vi_dataset import EN_VIDataset
 from models.model import Transformer
 from utils.utils import input_target_collate_fn
 
-src_path = 'data/en-vi/raw-data/train/train.en'
-trg_path = 'data/en-vi/raw-data/train/train.vi'
+import sys
+
+src_path = 'data/en-vi/raw-data/test/tst2013.en'
+trg_path = 'data/en-vi/raw-data/test/tst2013.vi'
 
 ds = EN_VIDataset(src_path=src_path, trg_path=trg_path)
-dl = DataLoader(ds, batch_size=1, shuffle=False,
+dl = DataLoader(ds, batch_size=32, shuffle=True,
                 collate_fn=input_target_collate_fn)
 
-dev = 'cpu'
 
-config = torch.load(
-    'checkpoints/Transformers-en-to-vi-2021_07_18-22_23_54/best_bleu-bleu=0.144.pth',
-    map_location=dev)
+TRG_EOS_TOKEN = '</s>'
+TRG_EOS_ID = ds.vi_tokenizer.token_to_id(TRG_EOS_TOKEN)
+
+dev = 'cuda'
+
+config = torch.load(sys.argv[1], map_location=dev)
 
 model_cfg = config['config']['model']
 model = Transformer(
@@ -36,15 +42,59 @@ model.load_state_dict(config['model_state_dict'])
 
 model.eval()
 
-# src_data = open(src_path).read().splitlines()
-# trg_data = open(trg_path).read().splitlines()
-
 with torch.no_grad():
-    for src, trg in dl:
+    trgs, preds = [], []
+    bar = tqdm(dl)
+    score = 0
+    for i, (src, trg) in enumerate(bar):
+        bar.set_description(f'BLEU: {score:.06f}')
+
         src = src.to(dev)
         trg = trg.to(dev)
-        print(ds.en_tokenizer.decode_batch(src.cpu().numpy()))
-        print(ds.vi_tokenizer.decode_batch(trg.cpu().numpy()))
-        out = model(src, trg[:, :-1])
-        print(ds.vi_tokenizer.decode_batch(out.argmax(-1).cpu().numpy()))
-        input()
+
+        # src_ = src.cpu().numpy()
+        # src_ = ds.en_tokenizer.decode_batch(src_)[0]
+        # print(src_)
+
+        trg_ = trg.cpu().numpy()[:, 1:]
+        trg_ = ds.vi_tokenizer.decode_batch(trg_)
+        ps = []
+        for p in trg_:
+            eos = p.find('</s>')
+            if eos != -1:
+                p = p[:eos]
+            p = p.split()
+            ps.append([p])
+        trgs += ps
+
+        if True:
+            pred = model.predict(src,
+                                 max_length=256,
+                                 eos_id=TRG_EOS_ID)
+        else:
+            pred = model(src, trg[:, :-1]).argmax(-1)
+        pred_ = pred.cpu().numpy()
+        pred_ = ds.vi_tokenizer.decode_batch(pred_)
+        ps = []
+        for p in pred_:
+            eos = p.find('</s>')
+            if eos != -1:
+                p = p[:eos]
+            p = p.split()
+            ps.append(p)
+        preds += ps
+
+        # if i == 5:
+        #     for j in range(i):
+        #         print('Target', ' '.join(trgs[j][0]))
+        #         print('Pred', ' '.join(preds[j]))
+        #         input()
+
+        score = nltk.translate.bleu_score.corpus_bleu(trgs, preds)
+        # print(trgs, preds)
+        # input()
+
+    print('Final', score)
+
+    import csv
+    csv.writer(open('greedy_32.txt', 'w'), delimiter=' ').writerows(preds)

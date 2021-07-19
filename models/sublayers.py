@@ -92,8 +92,8 @@ class MultiHeadAttention(nn.Module):
         self.scale = self.d_k ** (-0.5)
         self.d_v = d_v
 
-        self.w_q = nn.Linear(d_model, n_head * d_k, bias=False)
-        self.w_k = nn.Linear(d_model, n_head * d_k, bias=False)
+        self.w_q = nn.Linear(d_model, n_head * self.d_k, bias=False)
+        self.w_k = nn.Linear(d_model, n_head * self.d_k, bias=False)
         self.w_v = nn.Linear(d_model, n_head * d_v, bias=False)
 
         self.out_proj = nn.Linear(n_head * d_v, d_model, bias=False)
@@ -116,6 +116,7 @@ class MultiHeadAttention(nn.Module):
         x = self.out_proj(x)
 
         return x  # [b, seq_len, d_model]
+
 
 class PositionwiseFeedForward(nn.Module):
     '''
