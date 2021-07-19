@@ -1,8 +1,9 @@
 import torch
 import numpy as np
 
-PAD_INDEX = 0
-END_INDEX = 3
+PAD_INDEX = 1
+END_INDEX = 2
+
 
 def idx_to_word(x, vocab):
     #     word = vocab.itos[i]
@@ -23,7 +24,8 @@ def idx_to_word(x, vocab):
             words.append(word)
     words = " ".join(words)
     return words
-   
+
+
 def input_target_collate_fn(batch):
     """merges a list of samples to form a mini-batch."""
 
@@ -36,13 +38,16 @@ def input_target_collate_fn(batch):
     sources_max_length = max(sources_lengths)
     targets_max_length = max(targets_lengths)
 
-    sources_padded = [sources + [PAD_INDEX] * (sources_max_length - len(sources)) for sources, targets in batch]
-    targets_padded = [targets + [PAD_INDEX] * (targets_max_length - len(targets)) for sources, targets in batch]
+    sources_padded = [sources + [PAD_INDEX] *
+                      (sources_max_length - len(sources)) for sources, targets in batch]
+    targets_padded = [targets + [PAD_INDEX] *
+                      (targets_max_length - len(targets)) for sources, targets in batch]
 
     sources_tensor = torch.tensor(sources_padded)
     targets_tensor = torch.tensor(targets_padded)
 
     return sources_tensor, targets_tensor
+
 
 def preprocess(trg, out):
     trg_end_pos = np.where(trg == END_INDEX)[0][0]
@@ -52,6 +57,7 @@ def preprocess(trg, out):
         out_end_pos = out_end_pos[0][0]
         out = out[:out_end_pos + 1]
     return trg, out
+
 
 if __name__ == '__main__':
     trg = np.array([5, 9, 8, 7, 7, 3, 0, 0, 0, 0])

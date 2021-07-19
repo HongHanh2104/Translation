@@ -14,7 +14,6 @@ from utils.utils import preprocess
 class Trainer():
     def __init__(self, model,
                  device,
-                 trg_vocab,
                  iterator,
                  loss,
                  metric,
@@ -27,7 +26,6 @@ class Trainer():
 
         self.model = model
         self.train_iter, self.val_iter = iterator
-        self.trg_vocab = trg_vocab
 
         self.loss = loss
         self.metric = metric
@@ -149,6 +147,7 @@ class Trainer():
             # 2: Get network outputs
             out = self.model(src, trg[:, :-1])
             trg = trg[:, 1:]
+            # out = self.model(src, trg)
 
             # 3: Calculate the loss
             loss, ntokens = self.loss(out, trg)

@@ -11,21 +11,22 @@ model:
 trainer:
     nepochs: 50
     val_step: 1
-    log_step: 30
+    log_step: 1
     lr: !!float 1e-4
 optimizer:
-    # adam_eps: !!float 1e-8
     patience: 10
     warmup: 10
-    # clip: 1.0
     factor: 0.5
 dataset:
-    root_dir: ./data/en-vi/processed-data
     train:
+        src_path: data/en-vi/raw-data/train/train.en
+        trg_path: data/en-vi/raw-data/train/train.vi
         batch_size: 16
         shuffle: True
         clip_grads: False
         num_workers: 8
     val:
+        src_path: data/en-vi/raw-data/val/tst2012.en
+        trg_path: data/en-vi/raw-data/val/tst2012.vi
         batch_size: 16
         num_workers: 8
