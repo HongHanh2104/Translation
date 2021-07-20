@@ -10,8 +10,7 @@ import numpy as np
 
 
 class Encoder(nn.Module):
-    def __init__(self, n_src_vocab,
-                 max_len,
+    def __init__(self, 
                  d_model,
                  d_ffn,
                  n_layer,
@@ -36,8 +35,7 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, n_dec_vocab,
-                 max_len,
+    def __init__(self, 
                  d_model,
                  d_ffn,
                  n_layer,
@@ -95,18 +93,14 @@ class Transformer(nn.Module):
                                 dropout=dropout
                                 )
 
-        self.encoder = Encoder(n_src_vocab=n_src_vocab,
-                               max_len=max_len,
-                               d_model=d_model,
+        self.encoder = Encoder(d_model=d_model,
                                d_ffn=d_ffn,
                                n_layer=n_layer,
                                n_head=n_head,
                                dropout=dropout
                                )
 
-        self.decoder = Decoder(n_dec_vocab=n_trg_vocab,
-                               max_len=max_len,
-                               d_model=d_model,
+        self.decoder = Decoder(d_model=d_model,
                                d_ffn=d_ffn,
                                n_layer=n_layer,
                                n_head=n_head,
