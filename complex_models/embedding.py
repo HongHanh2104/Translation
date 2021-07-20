@@ -7,15 +7,10 @@ import numpy as np
 class ComplexEmbedding(nn.Module):
     def __init__(self,
                  vocab_size,
-                 d_model,
-                 concat=True):
+                 d_model):
         super(ComplexEmbedding, self).__init__()
         
-        self.concat = concat
-        if concat:
-            d_emb = d_model // 2
-        else:
-            d_emb = d_model
+        d_emb = d_model
 
         self.word_emb = nn.Embedding(vocab_size, d_emb)
         self.freq_emb = nn.Embedding(vocab_size, d_emb)
@@ -36,10 +31,7 @@ class ComplexEmbedding(nn.Module):
         out_real = amp * torch.cos(out_phase) # [b, seq_len, d_model]
         out_im = amp * torch.sin(out_phase) # [b, seq_len, d_model]
         
-        if self.concat:
-            return torch.cat([out_real, out_im], -1) # [b, seq_len, d_model + d_model]
-        else:
-            return out_real, out_im
+        return out_real, out_im
 
     def forward(self, x):
         return self.get_embedding(x)
@@ -50,4 +42,4 @@ if __name__ == '__main__':
     
     cplx_emb = ComplexEmbedding(100, 512)
     result = cplx_emb(seq)
-    print(result.shape)
+    print(result[1].shape)

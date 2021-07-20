@@ -22,37 +22,58 @@ class ScaledDotProductAttention(nn.Module):
 
     """
 
-    def __init__(self, scale, attn_drop):
+    def __init__(self, scale, attn_drop, continue_complex):
         super().__init__()
         # apply the softmax along the last dimension
         self.softmax = nn.Softmax(dim=-1)
         self.attn_drop = nn.Dropout(attn_drop)
         self.scale = scale
+        self.continue_complex = continue_complex
 
-    def forward(self, q, k, v, mask=None):
-        # q: [b, n_head, t_q, d_k]
-        # k: [b, n_head, t_k, d_k]
-        # v: [b, n_head, t_k, d_v]
+    def forward(self, x_real, x_phase, mask=None):
+        # q: [b, n_head, q_len, d_k]
+        # k: [b, n_head, k_len, d_k]
+        # v: [b, n_head, v_len, d_v]
 
-        # Step 1: dot product q with k^T to compute similarity
-        # k_tranpose: [b, n_head, d_k, t_k]
-        # attn: [b, n_head, t_q, t_k]
-        k_T = k.transpose(2, 3)
-        attn = (q @ k_T) * self.scale
+        q_real, k_real, v_real = x_real
+        q_phase, k_phase, v_phase = x_phase
 
-        # Step 2: Apply mask
-        if mask is not None:
-            mask = mask.unsqueeze(1)  # [b, 1, t_q, t_k]
-            attn = attn.masked_fill(mask == 0, -1e9)
+        attn_real = (q_real @ k_real.transpose(2, 3)) \
+                - (q_phase @ k_phase.transpose(2, 3)) # [b, n_head, q_len, k_len]
+        
+        attn_phase = (q_real @ k_phase.transpose(2, 3)) \
+                + (q_phase @ k_real.transpose(2, 3)) # [b, n_head, q_len, k_len]
+        
+        if self.continue_complex:
+            attn_real = attn_real / self.scale
+            attn_phase = attn_phase / self.scale
 
-        # Step 3: Pass to softmax to make [0, 1] range
-        attn = self.softmax(attn)
-        attn = self.attn_drop(attn)
+            if mask is not None:
+                mask = mask.unsqueeze(1)
+                attn_real = attn_real.masked_fill(mask == 0, -1e9)
+                attn_phase = attn_real.masked_fill(mask == 0, -1e9)
 
-        # Step 4: Multiply with v
-        # v: [b, n_head, t_q, d_v]
-        x = attn @ v
-        return x, attn
+            attn_real = self.attn_drop(self.softmax(attn_real))
+            attn_phase = self.attn_drop(self.softmax(attn_phase))
+
+            x_real = (attn_real @ v_real) - (attn_phase @ v_phase)
+            x_phase = (attn_real @ v_phase) + (attn_phase @ v_real)
+        else:
+            attn = attn_real * attn_real + attn_phase * attn_phase
+            attn = torch.sqrt(attn)
+            attn /= self.scale
+
+            if mask is not None:
+                mask = mask.unsqueeze(1)
+                attn = attn.masked_fill(mask == 0, -1e9)
+            
+            # paper k dropout ????
+            attn = self.softmax(attn)
+
+            x_real = attn @ v_real # [b, n_head, seq_len, d_v]
+            x_phase = attn @ v_phase # [b, n_head, seq_len, d_v]
+
+        return x_real, x_phase, attn_real
 
 
 class MultiHeadAttention(nn.Module):
@@ -80,6 +101,7 @@ class MultiHeadAttention(nn.Module):
                  d_k=64, d_v=64,
                  n_head=8,
                  attn_drop=0.,
+                 continue_complex=False,
                  ):
         super().__init__()
 
@@ -89,7 +111,7 @@ class MultiHeadAttention(nn.Module):
 
         # head dimension
         self.d_k = self.d_model // self.n_head
-        self.scale = self.d_k ** (-0.5)
+        self.scale = (self.d_k * 2) ** (0.5)
         self.d_v = d_v
 
         self.w_q = nn.Linear(d_model, n_head * self.d_k, bias=False)
@@ -99,23 +121,43 @@ class MultiHeadAttention(nn.Module):
         self.out_proj = nn.Linear(n_head * d_v, d_model, bias=False)
 
         self.attention = ScaledDotProductAttention(scale=self.scale,
-                                                   attn_drop=attn_drop)
+                                                   attn_drop=attn_drop,
+                                                   continue_complex=continue_complex)
 
-    def forward(self, q, k, v, mask=None):
+    def forward(self, x_real, x_phase, mask=None):
+        # x_real is a list of 3 elements: q_real, k_real, v_real
+        # x_phase is a list of 3 elements: q_phase, k_phase, v_phase
+        
         # q, k, v: [b, seq_len, d_model]
         # mask: [b, query_len, key_len]
-        b = q.shape[0]
 
-        q = self.w_q(q).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
-        k = self.w_k(k).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
-        v = self.w_v(v).reshape(b, -1, self.n_head, self.d_v).transpose(1, 2)
+        q_real, k_real, v_real = x_real
+        q_phase, k_phase, v_phase = x_phase
 
-        x, _ = self.attention(q, k, v, mask=mask)
+        b = q_real.shape[0]
 
-        x = x.transpose(1, 2).reshape(b, -1, self.n_head * self.d_v)
-        x = self.out_proj(x)
+        # q, k, v_{real/ phase}: [b, n_head, seq_len, d_k or d_v]
+        q_real = self.w_q(q_real).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
+        k_real = self.w_k(k_real).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
+        v_real = self.w_v(v_real).reshape(b, -1, self.n_head, self.d_v).transpose(1, 2)
 
-        return x  # [b, seq_len, d_model]
+        q_phase = self.w_q(q_phase).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
+        k_phase = self.w_k(k_phase).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
+        v_phase = self.w_v(v_phase).reshape(b, -1, self.n_head, self.d_v).transpose(1, 2)
+
+        x_real, x_phase, _ = self.attention(
+                                [q_real, k_real, v_real], 
+                                [q_phase, k_phase, v_phase], 
+                                mask=mask
+                                ) # [b, n_head, seq_len, d_v]
+
+        x_real = x_real.transpose(1, 2).reshape(b, -1, self.n_head * self.d_v)
+        x_phase = x_phase.transpose(1, 2).reshape(b, -1, self.n_head * self.d_v)
+
+        x_real = self.out_proj(x_real) # [b, seq_len, d_model]
+        x_phase = self.out_proj(x_phase) # [b, seq_len, d_model]
+
+        return x_real, x_phase 
 
 
 class PositionwiseFeedForward(nn.Module):
@@ -126,28 +168,45 @@ class PositionwiseFeedForward(nn.Module):
 
     def __init__(self, d_model, d_ffn, dropout=0.1):
         super().__init__()
-        self.feed_forward = nn.Sequential(
-            nn.Linear(d_model, d_ffn),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_ffn, d_model),
-            # nn.Dropout(dropout)
-        )
+        
+        self.linear_1 = nn.Linear(d_model, d_ffn)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(dropout)
+        self.linear_2 = nn.Linear(d_ffn, d_model)
 
-    def forward(self, x):
+    def forward(self, x_real, x_phase):
         # x: [b, seq_len, d_model]
-        return self.feed_forward(x)
+        w_real = self.relu(self.linear_1(x_real) - \
+                            self.linear_1(x_phase)) # [b, seq_len, d_ffn]
+        w_phase = self.relu(self.linear_1(x_phase) + \
+                             self.linear_1(x_real)) # [b, seq_len, d_ffn]
+        
+        w_real = self.dropout(w_real)
+        w_phase = self.dropout(w_phase)
+        
+        x_real = self.linear_2(w_real) - self.linear_2(w_phase) # [b, seq_len, d_model]
+        x_phase = self.linear_2(w_phase) + self.linear_2(w_real) # [b, seq_len, d_model]
 
+        return x_real, x_phase
 
 if __name__ == '__main__':
-    # inputs = torch.randn(3, 5, 512).cpu()
+    # x_real = torch.randn(3, 10, 512)
+    # x_phase = torch.randn(3, 10, 512)
     # ffn = PositionwiseFeedForward(512, 2048)
-    # out = ffn(inputs).cpu()
-    # print(out.size())
+    # out = ffn(x_real, x_phase)
+    # print(out[0].size())
 
-    q = torch.randn(1, 10, 512).cpu()
-    k = torch.randn(1, 10, 512).cpu()
-    v = torch.randn(1, 10, 512).cpu()
-    multi_head_attn = MultiHeadAttention(d_model=512, n_head=8)
-    out = multi_head_attn(q, k, v)
-    print(out.shape)
+    q_real = torch.randn(1, 10, 512)
+    k_real = torch.randn(1, 10, 512)
+    v_real = torch.randn(1, 10, 512)
+    q_phase = torch.randn(1, 10, 512)
+    k_phase = torch.randn(1, 10, 512)
+    v_phase = torch.randn(1, 10, 512)
+
+    x_real = [q_real, k_real, v_real]
+    x_phase = [q_phase, k_phase, v_phase]
+    
+    # multi_head_attn = MultiHeadAttention(d_model=512, n_head=8, continue_complex=False)
+    # out = multi_head_attn([q_real, k_real, v_real], 
+    #                       [q_phase, k_phase, v_phase])
+    # print(out[0].shape)

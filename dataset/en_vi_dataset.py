@@ -106,16 +106,17 @@ class EN_VIDataset(data.Dataset):
     def __init__(self,
                  src_path,
                  trg_path,
+                 src_vocab=["vocab/english/english-vocab.json",
+                            "vocab/english/english-merges.txt"],
+                 trg_vocab=["vocab/vietnamese/vietnamese-vocab.json",
+                            "vocab/vietnamese/vietnamese-merges.txt"],
                  max_len=256):
         self.max_len = max_len
 
         self.src_data = open(src_path).read().splitlines()
         self.trg_data = open(trg_path).read().splitlines()
 
-        self.vi_tokenizer = ByteLevelBPETokenizer(
-            "vocab/vietnamese/vietnamese-vocab.json",
-            "vocab/vietnamese/vietnamese-merges.txt",
-        )
+        self.vi_tokenizer = ByteLevelBPETokenizer(*trg_vocab)
 
         self.vi_tokenizer._tokenizer.post_processor = BertProcessing(
             ("</s>", self.vi_tokenizer.token_to_id("</s>")),
@@ -123,10 +124,7 @@ class EN_VIDataset(data.Dataset):
         )
         self.vi_tokenizer.enable_truncation(max_length=max_len)
 
-        self.en_tokenizer = ByteLevelBPETokenizer(
-            "vocab/english/english-vocab.json",
-            "vocab/english/english-merges.txt",
-        )
+        self.en_tokenizer = ByteLevelBPETokenizer(*src_vocab)
 
         self.en_tokenizer._tokenizer.post_processor = BertProcessing(
             ("</s>", self.en_tokenizer.token_to_id("</s>")),
@@ -135,7 +133,6 @@ class EN_VIDataset(data.Dataset):
         self.en_tokenizer.enable_truncation(max_length=max_len)
 
     def __getitem__(self, idx):
-
         src, trg = self.src_data[idx], self.trg_data[idx]
 
         indexed_src = self._tokenize_src_data(src)

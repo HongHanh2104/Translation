@@ -56,11 +56,15 @@ def train(config):
     print('Building dataset ...')
     train_data = EN_VIDataset(
         src_path=config['dataset']['train']['src_path'],
-        trg_path=config['dataset']['train']['trg_path'])
+        trg_path=config['dataset']['train']['trg_path'],
+        src_vocab=config['dataset']['train']['src_vocab'],
+        trg_vocab=config['dataset']['train']['trg_vocab'])
 
     val_data = EN_VIDataset(
         src_path=config['dataset']['val']['src_path'],
-        trg_path=config['dataset']['val']['trg_path'])
+        trg_path=config['dataset']['val']['trg_path'],
+        src_vocab=config['dataset']['val']['src_vocab'],
+        trg_vocab=config['dataset']['val']['trg_vocab'])
 
     train_dataloader = DataLoader(
         train_data,
@@ -88,12 +92,7 @@ def train(config):
         n_trg_vocab=train_data.vi_tokenizer.get_vocab_size(),
         src_pad_idx=train_data.en_tokenizer.token_to_id('<pad>'),
         trg_pad_idx=train_data.vi_tokenizer.token_to_id('<pad>'),
-        max_len=config['model']['max_len'],
-        d_model=config['model']['d_model'],
-        d_ffn=config['model']['d_ffn'],
-        n_layer=config['model']['n_layer'],
-        n_head=config['model']['n_head'],
-        dropout=config['model']['dropout']
+        **config['model']
     )
 
     # Get pretrained model

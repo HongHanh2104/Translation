@@ -73,7 +73,8 @@ class Transformer(nn.Module):
                  dropout=0.1,
                  emb_type='tf',
                  xavier_init=False,
-                 share_emb_prj=False):
+                 share_emb_prj=False,
+                 share_emb_emb=False):
         super().__init__()
         self.src_pad_idx, self.trg_pad_idx = src_pad_idx, trg_pad_idx
         self.max_len = max_len
@@ -103,7 +104,7 @@ class Transformer(nn.Module):
                 vocab_size=n_trg_vocab,
                 d_model=d_model
             )
-        
+
         self.encoder = Encoder(d_model=d_model,
                                d_ffn=d_ffn,
                                n_layer=n_layer,
@@ -128,6 +129,9 @@ class Transformer(nn.Module):
         if share_emb_prj:
             self.proj_linear.weight = self.dec_emb.word_emb.weight
 
+        if share_emb_emb:
+            self.dec_emb.word_emb.weight = self.enc_emb.word_emb.weight
+
     def forward(self, src_seq, trg_seq):
         # src_seq: [batch, src_len]
         # trg_seq: [batch, trg_len]
@@ -136,8 +140,8 @@ class Transformer(nn.Module):
         trg_mask = get_pad_mask(
             trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)
 
-        src_emb = self.enc_emb(src_seq) # [b, src_len, d_model]
-        trg_emb = self.dec_emb(trg_seq) # [b, trg_len, d_model]
+        src_emb = self.enc_emb(src_seq)  # [b, src_len, d_model]
+        trg_emb = self.dec_emb(trg_seq)  # [b, trg_len, d_model]
 
         # [batch, seq_len, d_model]
         enc_outs = self.encoder(src_emb, src_mask)

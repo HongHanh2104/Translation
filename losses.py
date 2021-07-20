@@ -18,7 +18,7 @@ class TokenCrossEntropyLoss(nn.Module):
         out = out.reshape(b * seq_len, vocab_size)
         trg = trg.reshape(b * seq_len)
 
-        if False:
+        if True:
             loss = self.base_cross_entropy(out, trg)
         else:
             eps = 0.1
