@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 
-
 def get_pad_mask(seq, pad_idx):
     # create mask with the values of 0's wherever there is padding in the input
     # seq: [b, seq_len]
