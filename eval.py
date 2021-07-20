@@ -95,6 +95,3 @@ with torch.no_grad():
         # input()
 
     print('Final', score)
-
-    import csv
-    csv.writer(open('greedy_32.txt', 'w'), delimiter=' ').writerows(preds)

@@ -19,12 +19,7 @@ class Encoder(nn.Module):
                  dropout=0.1):
         super().__init__()
         self.d_model = d_model
-        self.pos_encoding = TransformerEmbedding(
-            vocab_size=n_src_vocab,
-            d_model=d_model,
-            max_len=max_len,
-            dropout=dropout
-        )
+
         self.layer_stack = nn.ModuleList([
             EncoderLayer(d_model=d_model,
                          d_ffn=d_ffn,
@@ -35,7 +30,6 @@ class Encoder(nn.Module):
 
     def forward(self, x, src_mask):
         # src_seq: [b, seq_len, embed_size]
-        x = self.pos_encoding(x)
         for layer in self.layer_stack:
             x = layer(x, src_mask)
         return x
@@ -51,13 +45,7 @@ class Decoder(nn.Module):
                  dropout=0.1):
         super().__init__()
         self.d_model = d_model
-        self.pos_encoding = TransformerEmbedding(
-            vocab_size=n_dec_vocab,
-            d_model=d_model,
-            max_len=max_len,
-            dropout=dropout
-        )
-
+        
         self.layer_stack = nn.ModuleList([
             DecoderLayer(d_model=d_model,
                          d_ffn=d_ffn,
@@ -65,18 +53,15 @@ class Decoder(nn.Module):
                          dropout=dropout)
             for _ in range(n_layer)
         ])
-        self.linear = nn.Linear(d_model, n_dec_vocab)
-
+        
     def forward(self, trg, enc_outs, dec_enc_attn_mask=None, slf_attn_mask=None):
         # trg: [b, seq_len - 1, d_model]
         # enc_outs: [b, seq_len, d_model]
-        trg = self.pos_encoding(trg)
 
         for layer in self.layer_stack:
             trg = layer(trg, enc_outs, dec_enc_attn_mask, slf_attn_mask)
 
-        out = self.linear(trg)  # [b, seq_len, trg_vocab_size]
-        return out
+        return trg
 
 
 class Transformer(nn.Module):
@@ -85,7 +70,7 @@ class Transformer(nn.Module):
                  n_trg_vocab,
                  src_pad_idx,
                  trg_pad_idx,
-                 max_len=5000,
+                 max_len=256,
                  d_model=512,
                  d_ffn=2048,
                  n_layer=6,
@@ -94,6 +79,21 @@ class Transformer(nn.Module):
         super().__init__()
         self.src_pad_idx, self.trg_pad_idx = src_pad_idx, trg_pad_idx
         self.max_len = max_len
+        self.d_model = d_model
+
+        self.enc_pos_encoding = TransformerEmbedding(
+                                vocab_size=n_src_vocab,
+                                d_model=d_model,
+                                max_len=max_len,
+                                dropout=dropout
+                                )
+
+        self.dec_pos_encoding = TransformerEmbedding(
+                                vocab_size=n_trg_vocab,
+                                d_model=d_model,
+                                max_len=max_len,
+                                dropout=dropout
+                                )
 
         self.encoder = Encoder(n_src_vocab=n_src_vocab,
                                max_len=max_len,
@@ -112,6 +112,8 @@ class Transformer(nn.Module):
                                n_head=n_head,
                                dropout=dropout
                                )
+        
+        self.proj_linear = nn.Linear(d_model, n_trg_vocab)
 
     def forward(self, src_seq, trg_seq):
         # src_seq: [batch, src_len]
@@ -121,10 +123,17 @@ class Transformer(nn.Module):
         trg_mask = get_pad_mask(
             trg_seq, self.trg_pad_idx) & get_subsequent_mask(trg_seq)
 
-        enc_outs = self.encoder(src_seq, src_mask)  # [batch, seq_len, d_model]
+        src_pos_encoded = self.enc_pos_encoding(src_seq)
+        trg_pos_encoded = self.dec_pos_encoding(trg_seq)
+        #print(trg_pos_encoded.shape)
+
+        enc_outs = self.encoder(src_pos_encoded, src_mask)  # [batch, seq_len, d_model]
         # [b, seq_len, trg_vocab_size]
-        dec_outs = self.decoder(trg_seq, enc_outs, src_mask, trg_mask)
-        return dec_outs
+        dec_outs = self.decoder(trg_pos_encoded, enc_outs, src_mask, trg_mask)
+        
+        out = self.proj_linear(dec_outs)  # [b, seq_len, trg_vocab_size]
+        
+        return out
 
     def predict(self, src, max_length=256, eos_id=0):
         q = torch.zeros(src.size(0), 1).long().to(src.device)  # [B, 1]

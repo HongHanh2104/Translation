@@ -22,8 +22,6 @@ if __name__ == '__main__':
     print(f'The model has {parameters} trainable parameters.')
 
     src_seq = torch.randint(50, (8, 200)).to(device)
-    src_seq = src_seq[:, :100]
-    print(src_seq.shape)
-    trg_seq = torch.randint(50, (8, 200)).to(device)
-    #pred = model(src_seq, trg_seq)
-    #print(pred.shape)
+    trg_seq = torch.randint(50, (8, 225)).to(device)
+    pred = model(src_seq, trg_seq)
+    print(pred.shape)

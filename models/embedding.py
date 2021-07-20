@@ -51,8 +51,7 @@ class TransformerEmbedding(nn.Module):
         _, length = x.shape
         
         x = self.embedding(x) * math.sqrt(self.d_model)
-        #print(f'length: {length}')
-        #print(x.shape)
+        
         x = x + self.pe[:, :length]
         x = self.dropout(x)
 

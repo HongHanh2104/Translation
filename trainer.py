@@ -183,7 +183,8 @@ class Trainer():
         accuracy = self.metric.corpus_bleu(
             refs,
             hyps,
-            smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
+            # smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1
+        )
 
         # Upload tensorboard
         self.tsboard.update_loss('val', loss, epoch)
@@ -205,8 +206,8 @@ class Trainer():
             # Eval phase
             val_loss, bleu = self.val_epoch(epoch, self.val_iter)
 
-            if epoch > self.config['optimizer']['warmup']:
-                self.scheduler.step(val_loss)
+            # if epoch > self.config['optimizer']['warmup']:
+            self.scheduler.step(val_loss)
 
             if (epoch + 1) % self.val_step == 0:
                 # Save weights
