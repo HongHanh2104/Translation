@@ -140,14 +140,12 @@ class PositionwiseFeedForward(nn.Module):
 
 
 if __name__ == '__main__':
-    # inputs = torch.randn(3, 5, 512).cpu()
-    # ffn = PositionwiseFeedForward(512, 2048)
-    # out = ffn(inputs).cpu()
-    # print(out.size())
+    inputs = torch.randn(3, 5, 512).cpu()
+    ffn = PositionwiseFeedForward(512, 2048)
+    out = ffn(inputs).cpu()
+    print(out.size())
 
-    q = torch.randn(1, 10, 512).cpu()
-    k = torch.randn(1, 10, 512).cpu()
-    v = torch.randn(1, 10, 512).cpu()
-    multi_head_attn = MultiHeadAttention(d_model=512, n_head=8)
-    out = multi_head_attn(q, k, v)
-    print(out.shape)
+    
+    
+    
+

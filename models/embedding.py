@@ -21,28 +21,26 @@ class TransformerEmbedding(nn.Module):
                  dropout=0.1):
         super(TransformerEmbedding, self).__init__()
 
-        self.d_model = d_model
+        self.d_emb = d_model
 
         # Token embedding
         self.word_emb = nn.Embedding(
             vocab_size,
-            d_model,
+            self.d_emb,
             padding_idx=padding_idx
         )
         # Positional encoding
-        pe = torch.zeros(max_len, d_model)
+        pe = torch.zeros(max_len, self.d_emb)
 
         pos = torch.arange(0, max_len).unsqueeze(1)
         pos = pos.float()
 
-        div_term = torch.exp((torch.arange(0, d_model, 2) *
-                              (-math.log(10000.0) / d_model)).float())
+        div_term = torch.exp((torch.arange(0, self.d_emb, 2) *
+                              (-math.log(10000.0) / self.d_emb)).float())
         pe[:, 0::2] = torch.sin(pos * div_term)  # dim 2i
         pe[:, 1::2] = torch.cos(pos * div_term)  # dim 2i + 1
         pe = pe.unsqueeze(0)  # [b, max_len, d_model]
 
-        # Resigter buffer in order to save the positional encodings inside state_dict
-        # If not, these would be excluded from the state_dict becuase they are not learnable
         self.register_buffer('pe', pe)
 
         self.dropout = nn.Dropout(dropout)
@@ -51,7 +49,7 @@ class TransformerEmbedding(nn.Module):
         # x: [b, seq_len]
         _, length = x.shape
 
-        x = self.word_emb(x) * math.sqrt(self.d_model)
+        x = self.word_emb(x) * math.sqrt(self.d_emb)
 
         x = x + self.pe[:, :length]
         x = self.dropout(x)
@@ -65,11 +63,11 @@ class ComplexEmbedding(nn.Module):
                  d_model):
         super(ComplexEmbedding, self).__init__()
 
-        d_emb = d_model // 2
+        self.d_emb = d_model // 2
 
-        self.word_emb = nn.Embedding(vocab_size, d_emb)
-        self.freq_emb = nn.Embedding(vocab_size, d_emb)
-        self.init_phase_emb = nn.Embedding(vocab_size, d_emb)
+        self.word_emb = nn.Embedding(vocab_size, self.d_emb)
+        self.freq_emb = nn.Embedding(vocab_size, self.d_emb)
+        self.init_phase_emb = nn.Embedding(vocab_size, self.d_emb)
 
     def get_embedding(self, x):
         b, length = x.shape
