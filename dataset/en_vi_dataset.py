@@ -126,10 +126,10 @@ class EN_VIDataset(data.Dataset):
 
         self.en_tokenizer = ByteLevelBPETokenizer(*src_vocab)
 
-        self.en_tokenizer._tokenizer.post_processor = BertProcessing(
-            ("</s>", self.en_tokenizer.token_to_id("</s>")),
-            ("<s>", self.en_tokenizer.token_to_id("<s>")),
-        )
+        # self.en_tokenizer._tokenizer.post_processor = BertProcessing(
+        #     ("</s>", self.en_tokenizer.token_to_id("</s>")),
+        #     ("<s>", self.en_tokenizer.token_to_id("<s>")),
+        # )
         self.en_tokenizer.enable_truncation(max_length=max_len)
 
     def __getitem__(self, idx):
