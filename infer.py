@@ -39,18 +39,12 @@ dev = 'cuda'
 
 config = torch.load(sys.argv[1], map_location=dev)
 
-model_cfg = config['config']['model']
 model = Transformer(
     n_src_vocab=en_tokenizer.get_vocab_size(),
     n_trg_vocab=vi_tokenizer.get_vocab_size(),
     src_pad_idx=en_tokenizer.token_to_id('<pad>'),
     trg_pad_idx=vi_tokenizer.token_to_id('<pad>'),
-    max_len=model_cfg['max_len'],
-    d_model=model_cfg['d_model'],
-    d_ffn=model_cfg['d_ffn'],
-    n_layer=model_cfg['n_layer'],
-    n_head=model_cfg['n_head'],
-    dropout=model_cfg['dropout']
+    **config['config']['model']
 ).to(dev)
 
 model.load_state_dict(config['model_state_dict'])

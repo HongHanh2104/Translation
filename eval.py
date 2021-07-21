@@ -12,7 +12,14 @@ import sys
 src_path = 'data/en-vi/raw-data/test/tst2013.en'
 trg_path = 'data/en-vi/raw-data/test/tst2013.vi'
 
-ds = EN_VIDataset(src_path=src_path, trg_path=trg_path)
+ds = EN_VIDataset(
+    src_path=src_path,
+    trg_path=trg_path,
+    # src_vocab=["vocab/shared/shared-vocab.json",
+    #            "vocab/shared/shared-merges.txt"],
+    # trg_vocab=["vocab/shared/shared-vocab.json",
+    #            "vocab/shared/shared-merges.txt"]
+)
 dl = DataLoader(ds, batch_size=32, shuffle=True,
                 collate_fn=input_target_collate_fn)
 
@@ -24,18 +31,12 @@ dev = 'cuda'
 
 config = torch.load(sys.argv[1], map_location=dev)
 
-model_cfg = config['config']['model']
 model = Transformer(
     n_src_vocab=ds.en_tokenizer.get_vocab_size(),
     n_trg_vocab=ds.vi_tokenizer.get_vocab_size(),
     src_pad_idx=ds.en_tokenizer.token_to_id('<pad>'),
     trg_pad_idx=ds.vi_tokenizer.token_to_id('<pad>'),
-    max_len=model_cfg['max_len'],
-    d_model=model_cfg['d_model'],
-    d_ffn=model_cfg['d_ffn'],
-    n_layer=model_cfg['n_layer'],
-    n_head=model_cfg['n_head'],
-    dropout=model_cfg['dropout']
+    **config['config']['model']
 ).to(dev)
 
 model.load_state_dict(config['model_state_dict'])
@@ -84,14 +85,6 @@ with torch.no_grad():
             ps.append(p)
         preds += ps
 
-        # if i == 5:
-        #     for j in range(i):
-        #         print('Target', ' '.join(trgs[j][0]))
-        #         print('Pred', ' '.join(preds[j]))
-        #         input()
-
         score = nltk.translate.bleu_score.corpus_bleu(trgs, preds)
-        # print(trgs, preds)
-        # input()
 
     print('Final', score)
