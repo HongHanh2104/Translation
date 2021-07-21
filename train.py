@@ -1,25 +1,19 @@
 from models.model import Transformer
-#from dataset.multi30k import Multi30kLoader
+from complex_models.model import ComplexTransformer
 from dataset.en_vi_dataset import EN_VIDataset
-from losses import TokenCrossEntropyLoss
-from metrics import BLEUMetric
-from trainer import Trainer
-from dictionaries import IndexDictionary
 from utils.utils import input_target_collate_fn
+from losses import TokenCrossEntropyLoss
+from trainer import Trainer
 
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch import optim
 from torch.optim import Adam
-
 import nltk
 
 import argparse
-from datetime import datetime
 import random
 import yaml
-import argparse
 
 
 def train(config):

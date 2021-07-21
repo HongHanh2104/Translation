@@ -1,4 +1,4 @@
-id: Transformers-en-to-vi
+id: Transformer-En2Vi-TPE
 seed: 2104
 pretrained_path: null
 model:
@@ -8,14 +8,15 @@ model:
     n_head: 8
     max_len: 256
     dropout: 0.1
-    share_emb_emb: True
-    share_emb_prj: True
-    xavier_init: True
+    share_emb_emb: False
+    share_emb_prj: False
+    emb_type: tf
+    # xavier_init: True
 trainer:
     nepochs: 50
     val_step: 1
     log_step: 1
-    lr: !!float 1e-5
+    lr: !!float 1e-4
 optimizer:
     patience: 10
     warmup: 10
@@ -24,10 +25,10 @@ dataset:
     train:
         src_path: data/en-vi/raw-data/train/train.en
         trg_path: data/en-vi/raw-data/train/train.vi
-        # src_vocab: ["vocab/english/english-vocab.json", "vocab/english/english-merges.txt"]
-        # trg_vocab: ["vocab/vietnamese/vietnamese-vocab.json", "vocab/vietnamese/vietnamese-merges.txt"]
-        src_vocab: ["vocab//english-vocab.json", "vocab/english/english-merges.txt"]
+        src_vocab: ["vocab/english/english-vocab.json", "vocab/english/english-merges.txt"]
         trg_vocab: ["vocab/vietnamese/vietnamese-vocab.json", "vocab/vietnamese/vietnamese-merges.txt"]
+        # src_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+        # trg_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
         batch_size: 16
         shuffle: True
         clip_grads: False
@@ -35,7 +36,9 @@ dataset:
     val:
         src_path: data/en-vi/raw-data/val/tst2012.en
         trg_path: data/en-vi/raw-data/val/tst2012.vi
-        # src_vocab: ["vocab/english/english-vocab.json", "vocab/english/english-merges.txt"]
-        # trg_vocab: ["vocab/vietnamese/vietnamese-vocab.json", "vocab/vietnamese/vietnamese-merges.txt"]
+        src_vocab: ["vocab/english/english-vocab.json", "vocab/english/english-merges.txt"]
+        trg_vocab: ["vocab/vietnamese/vietnamese-vocab.json", "vocab/vietnamese/vietnamese-merges.txt"]
+        # src_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+        # trg_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
         batch_size: 16
         num_workers: 8

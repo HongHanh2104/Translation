@@ -1,11 +1,9 @@
 import torch
-#from torchnet import meter
 import numpy as np
 from tqdm import tqdm
+
 from datetime import datetime
 import os
-import json
-import nltk
 
 from loggers import TensorboardLogger
 from utils.utils import preprocess

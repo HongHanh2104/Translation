@@ -18,18 +18,17 @@ class TokenCrossEntropyLoss(nn.Module):
         out = out.reshape(b * seq_len, vocab_size)
         trg = trg.reshape(b * seq_len)
 
-        if True:
-            loss = self.base_cross_entropy(out, trg)
-        else:
-            eps = 0.1
-            n_class = out.size(1)
+        # loss = self.base_cross_entropy(out, trg)
 
-            one_hot = torch.zeros_like(out).scatter(1, trg.view(-1, 1), 1)
-            one_hot = one_hot * (1 - eps) + (1 - one_hot) * eps / (n_class - 1)
-            log_prb = F.log_softmax(out, dim=1)
+        eps = 0.1
+        n_class = out.size(1)
 
-            non_pad_mask = trg.ne(self.pad_idx)
-            loss = -(one_hot * log_prb).sum(dim=1)
-            loss = loss.masked_select(non_pad_mask).sum()
+        one_hot = torch.zeros_like(out).scatter(1, trg.view(-1, 1), 1)
+        one_hot = one_hot * (1 - eps) + (1 - one_hot) * eps / (n_class - 1)
+        log_prb = F.log_softmax(out, dim=1)
+
+        non_pad_mask = trg.ne(self.pad_idx)
+        loss = -(one_hot * log_prb).sum(dim=1)
+        loss = loss.masked_select(non_pad_mask).sum()
 
         return loss / ntokens, ntokens
