@@ -129,7 +129,7 @@ class PyTorchTransformer(nn.Module):
         # trg_seq: [batch, trg_len]
 
         src_mask = get_pad_mask(src_seq, self.src_pad_idx)
-        
+
         trg_padding_mask = get_pad_mask(trg_seq, self.trg_pad_idx)
         trg_subsequent_mask = get_subsequent_mask(trg_seq)
 
@@ -245,7 +245,7 @@ class Transformer(nn.Module):
         # src_seq: [batch, src_len]
         # trg_seq: [batch, trg_len]
 
-        src_mask = get_pad_mask(src_seq, self.src_pad_idx) # [8, 1, src_len]
+        src_mask = get_pad_mask(src_seq, self.src_pad_idx)  # [8, 1, src_len]
         trg_padding_mask = get_pad_mask(trg_seq, self.trg_pad_idx)
         trg_subsequent_mask = get_subsequent_mask(trg_seq)
         trg_mask = trg_padding_mask & trg_subsequent_mask

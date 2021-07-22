@@ -39,7 +39,7 @@ class TransformerEmbedding(nn.Module):
                               (-math.log(10000.0) / self.d_emb)).float())
         pe[:, 0::2] = torch.sin(pos * div_term)  # dim 2i
         pe[:, 1::2] = torch.cos(pos * div_term)  # dim 2i + 1
-        pe = pe.unsqueeze(0)  # [b, max_len, d_model]
+        pe = pe.unsqueeze(0)  # [1, max_len, d_model]
 
         self.register_buffer('pe', pe)
 

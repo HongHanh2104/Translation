@@ -67,6 +67,10 @@ class Trainer():
         # Setup progress bar
         progress_bar = tqdm(iterator)
         for i, (src, trg) in enumerate(progress_bar):
+            # for j, group in enumerate(self.optimizer.param_groups):
+            #     self.tsboard.update_lr(
+            #         j, group['lr'], epoch * len(iterator) + i)
+
             # 1: Load sources, inputs, and targets
             # src = batch.src.to(self.device)
             # trg = batch.trg.to(self.device)
@@ -80,9 +84,6 @@ class Trainer():
             out = self.model(src, trg[:, :-1])
             trg = trg[:, 1:]
 
-            #out_reshape = out.contiguous().view(-1, out.shape[-1])
-            #trg = trg.contiguous().view(-1)
-
             # 4: Calculate the loss
             loss, ntokens = self.loss(out, trg)
 
@@ -91,8 +92,10 @@ class Trainer():
 
             # 6: Performing backpropagation
             if self.clip_grads:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(),
-                                               max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(),
+                    max_norm=1.0
+                )
             self.optimizer.step()
 
             with torch.no_grad():
@@ -199,7 +202,6 @@ class Trainer():
 
             # Train phase
             train_loss = self.train_epoch(epoch, self.train_iter)
-            #train_loss = 0.0
 
             # Eval phase
             val_loss, bleu = self.val_epoch(epoch, self.val_iter)
