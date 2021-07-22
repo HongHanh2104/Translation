@@ -1,4 +1,4 @@
-id: Transformer-En2Vi-TPE
+id: Transformer-En2Vi-TPE-WordPiece
 seed: 2104
 pretrained_path: null
 model:
@@ -9,7 +9,7 @@ model:
     max_len: 256
     dropout: 0.1
     share_emb_emb: False
-    share_emb_prj: False
+    share_emb_prj: True
     emb_type: tf
     # xavier_init: True
 trainer:
@@ -23,22 +23,32 @@ optimizer:
     factor: 0.5
 dataset:
     train:
-        src_path: data/en-vi/raw-data/train/train.en
-        trg_path: data/en-vi/raw-data/train/train.vi
-        src_vocab: ["vocab/english/english-vocab.json", "vocab/english/english-merges.txt"]
-        trg_vocab: ["vocab/vietnamese/vietnamese-vocab.json", "vocab/vietnamese/vietnamese-merges.txt"]
-        # src_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
-        # trg_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+        config:
+            src_path: data/en-vi/raw-data/train/train.en
+            trg_path: data/en-vi/raw-data/train/train.vi
+            # token_type: bpe
+            # src_vocab: ["vocab/english_bpe/en-bpe-minfreq5-vocab.json", "vocab/english_bpe/en-bpe-minfreq5-merges.txt"]
+            # trg_vocab: ["vocab/vietnamese_bpe/vi-bpe-minfreq5-vocab.json", "vocab/vietnamese_bpe/vi-bpe-minfreq5-merges.txt"]
+            # src_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+            # trg_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+            token_type: wordpiece
+            src_vocab: vocab/english_word/en-wordpiece-minfreq5-vocab.txt
+            trg_vocab: vocab/vietnamese_word/vi-wordpiece-minfreq5-vocab.txt
         batch_size: 16
         shuffle: True
-        clip_grads: False
+        clip_grads: True
         num_workers: 8
     val:
-        src_path: data/en-vi/raw-data/val/tst2012.en
-        trg_path: data/en-vi/raw-data/val/tst2012.vi
-        src_vocab: ["vocab/english/english-vocab.json", "vocab/english/english-merges.txt"]
-        trg_vocab: ["vocab/vietnamese/vietnamese-vocab.json", "vocab/vietnamese/vietnamese-merges.txt"]
-        # src_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
-        # trg_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+        config:
+            src_path: data/en-vi/raw-data/val/tst2012.en
+            trg_path: data/en-vi/raw-data/val/tst2012.vi
+            # token_type: bpe
+            # src_vocab: ["vocab/english_bpe/en-bpe-minfreq5-vocab.json", "vocab/english_bpe/en-bpe-minfreq5-merges.txt"]
+            # trg_vocab: ["vocab/vietnamese_bpe/vi-bpe-minfreq5-vocab.json", "vocab/vietnamese_bpe/vi-bpe-minfreq5-merges.txt"]
+            # src_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+            # trg_vocab: ["vocab/shared/shared-vocab.json", "vocab/shared/shared-merges.txt"]
+            token_type: wordpiece
+            src_vocab: vocab/english_word/en-wordpiece-minfreq5-vocab.txt
+            trg_vocab: vocab/vietnamese_word/vi-wordpiece-minfreq5-vocab.txt
         batch_size: 16
         num_workers: 8

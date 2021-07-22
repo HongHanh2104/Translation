@@ -4,11 +4,12 @@ from dataset.en_vi_dataset import EN_VIDataset
 from utils.utils import input_target_collate_fn
 from losses import TokenCrossEntropyLoss
 from trainer import Trainer
+from optimizers import ScheduledOptim
 
 import torch
 from torch.utils.data import DataLoader
 from torch import optim
-from torch.optim import Adam
+from torch.optim import Adam, optimizer
 import nltk
 
 import argparse
@@ -48,17 +49,8 @@ def train(config):
     # print(f'Target vocab size: {dec_voc_size}')
 
     print('Building dataset ...')
-    train_data = EN_VIDataset(
-        src_path=config['dataset']['train']['src_path'],
-        trg_path=config['dataset']['train']['trg_path'],
-        src_vocab=config['dataset']['train']['src_vocab'],
-        trg_vocab=config['dataset']['train']['trg_vocab'])
-
-    val_data = EN_VIDataset(
-        src_path=config['dataset']['val']['src_path'],
-        trg_path=config['dataset']['val']['trg_path'],
-        src_vocab=config['dataset']['val']['src_vocab'],
-        trg_vocab=config['dataset']['val']['trg_vocab'])
+    train_data = EN_VIDataset(**config['dataset']['train']['config'])
+    val_data = EN_VIDataset(**config['dataset']['val']['config'])
 
     train_dataloader = DataLoader(
         train_data,
@@ -107,14 +99,14 @@ def train(config):
 
     # Define loss
     random.seed(config['seed'])
-    #loss = nn.CrossEntropyLoss(ignore_index=src_pad_idx)
+    # loss = nn.CrossEntropyLoss(ignore_index=src_pad_idx)
     loss = TokenCrossEntropyLoss(
         pad_idx=train_data.vi_tokenizer.token_to_id('<pad>'))
     loss = loss.to(device)
 
     # Define metrics
     random.seed(config['seed'])
-    #metric = BLEUMetric()
+    # metric = BLEUMetric()
     metric = nltk.translate.bleu_score
 
     # Define Optimizer
@@ -122,7 +114,12 @@ def train(config):
     optimizer = Adam(
         model.parameters(),
         lr=config['trainer']['lr'],
+        betas=(0.9, 0.98), eps=1e-09
     )
+    # optimizer = ScheduledOptim(
+    # params=filter(lambda x: x.requires_grad, model.parameters()),
+    # betas=(0.9, 0.98), eps=1e-09,
+    # d_model=512, n_warmup_steps=4000)
 
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer=optimizer,
