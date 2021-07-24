@@ -1,4 +1,4 @@
-id: Transformer-En2Vi-TPE-WordPiece
+id: Transformer-En2Vi-NoPE-WordPiece
 seed: 2104
 pretrained_path: null
 model:
@@ -10,7 +10,7 @@ model:
     dropout: 0.1
     share_emb_emb: False
     share_emb_prj: True
-    emb_type: tf
+    emb_type: nope
     # xavier_init: True
 trainer:
     nepochs: 50
@@ -37,7 +37,7 @@ dataset:
         batch_size: 16
         shuffle: True
         clip_grads: True
-        num_workers: 8
+        num_workers: 4
     val:
         config:
             src_path: data/en-vi/raw-data/val/tst2012.en
@@ -51,4 +51,4 @@ dataset:
             src_vocab: vocab/english_word/en-wordpiece-minfreq5-vocab.txt
             trg_vocab: vocab/vietnamese_word/vi-wordpiece-minfreq5-vocab.txt
         batch_size: 16
-        num_workers: 8
+        num_workers: 4

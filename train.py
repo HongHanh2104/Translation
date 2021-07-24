@@ -1,10 +1,10 @@
-from models.model import Transformer
-from complex_models.model import ComplexTransformer
-from dataset.en_vi_dataset import EN_VIDataset
-from utils.utils import input_target_collate_fn
-from losses import TokenCrossEntropyLoss
-from trainer import Trainer
-from optimizers import ScheduledOptim
+from src.dataset.en_vi_dataset import EN_VIDataset
+from src.models.model import Transformer 
+from src.complex_models.model import ComplexTransformer
+from src.utils.utils import input_target_collate_fn
+from src.losses import TokenCrossEntropyLoss
+from src.trainer import Trainer
+from src.optimizers import ScheduledOptim
 
 import torch
 from torch.utils.data import DataLoader
@@ -24,30 +24,7 @@ def train(config):
 
     # Build dataset
     random.seed(config['seed'])
-    # print('Building dataset ...')
-    # data = Multi30kLoader(ext=('.en', '.de'))
-    # train, val, _ = data.create_dataset()
-    # data.build_vocab(data=train, min_freq=2)
-    # train_iter, val_iter, _ = data.make_iter(
-    #     batch_size=config['dataset']['train']['batch_size'],
-    #     device=device
-    # )
-    # src_pad_idx, trg_pad_idx = data.get_pad_idx()
-    # enc_voc_size, dec_voc_size = data.get_voc_size()
-
-    # print('Building vocabularies ...')
-    # src_dict = IndexDictionary.load(
-    #     data_dir=config['dataset']['root_dir'],
-    #     mode='source')
-    # enc_voc_size = src_dict.get_vocab_size()
-    # print(f'Source vocab size: {enc_voc_size}')
-
-    # trg_dict = IndexDictionary.load(
-    #     data_dir=config['dataset']['root_dir'],
-    #     mode='target')
-    # dec_voc_size = trg_dict.get_vocab_size()
-    # print(f'Target vocab size: {dec_voc_size}')
-
+    
     print('Building dataset ...')
     train_data = EN_VIDataset(**config['dataset']['train']['config'])
     val_data = EN_VIDataset(**config['dataset']['val']['config'])
