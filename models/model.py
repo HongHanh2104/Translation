@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from models.layers import EncoderLayer, DecoderLayer
-from models.embedding import TransformerEmbedding, ComplexEmbedding
+from models.embedding import TransformerEmbedding, WordEmbedding, ComplexEmbedding
 from models.mask import get_pad_mask, get_subsequent_mask
 
 
@@ -186,11 +186,13 @@ class Transformer(nn.Module):
         super().__init__()
         self.src_pad_idx, self.trg_pad_idx = src_pad_idx, trg_pad_idx
         self.max_len = max_len
+        assert emb_type in ['tf', 'complex', 'nope']
 
         if emb_type == 'tf':
             self.enc_emb = TransformerEmbedding(
                 vocab_size=n_src_vocab,
                 d_model=d_model,
+                padding_idx=src_pad_idx,
                 max_len=max_len,
                 dropout=dropout
             )
@@ -198,37 +200,52 @@ class Transformer(nn.Module):
             self.dec_emb = TransformerEmbedding(
                 vocab_size=n_trg_vocab,
                 d_model=d_model,
+                padding_idx=trg_pad_idx,
                 max_len=max_len,
                 dropout=dropout
             )
         elif emb_type == 'complex':
             self.enc_emb = ComplexEmbedding(
                 vocab_size=n_src_vocab,
-                d_model=d_model
+                d_model=d_model,
+                padding_idx=src_pad_idx
             )
 
             self.dec_emb = ComplexEmbedding(
                 vocab_size=n_trg_vocab,
-                d_model=d_model
+                d_model=d_model,
+                padding_idx=trg_pad_idx
+            )
+        elif emb_type == 'nope':
+            self.enc_emb = WordEmbedding(
+                vocab_size=n_src_vocab,
+                d_model=d_model,
+                padding_idx=src_pad_idx
+            )
+
+            self.dec_emb = WordEmbedding(
+                vocab_size=n_trg_vocab,
+                d_model=d_model,
+                padding_idx=trg_pad_idx
             )
 
         self.d_model = self.enc_emb.d_emb
 
-        self.encoder = Encoder(d_model=d_model,
+        self.encoder = Encoder(d_model=self.d_model,
                                d_ffn=d_ffn,
                                n_layer=n_layer,
                                n_head=n_head,
                                dropout=dropout
                                )
 
-        self.decoder = Decoder(d_model=d_model,
+        self.decoder = Decoder(d_model=self.d_model,
                                d_ffn=d_ffn,
                                n_layer=n_layer,
                                n_head=n_head,
                                dropout=dropout
                                )
 
-        self.proj_linear = nn.Linear(d_model, n_trg_vocab)
+        self.proj_linear = nn.Linear(self.d_model, n_trg_vocab)
 
         if xavier_init:
             for p in self.parameters():
@@ -236,7 +253,12 @@ class Transformer(nn.Module):
                     nn.init.xavier_uniform_(p)
 
         if share_emb_prj:
-            self.proj_linear.weight = self.dec_emb.word_emb.weight
+            if emb_type == 'complex':
+                l = self.proj_linear.weight.size(-1) // 2
+                self.proj_linear.weight[:, :l] = self.dec_emb.word_emb.weight
+                self.proj_linear.weight[:, l:] = self.dec_emb.word_emb.weight
+            else:
+                self.proj_linear.weight = self.dec_emb.word_emb.weight
 
         if share_emb_emb:
             self.dec_emb.word_emb.weight = self.enc_emb.word_emb.weight
