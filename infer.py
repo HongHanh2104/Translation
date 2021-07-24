@@ -3,7 +3,7 @@ from tqdm import tqdm
 from tokenizers.implementations import ByteLevelBPETokenizer
 from tokenizers.processors import BertProcessing
 
-from models.model import Transformer
+from src.models.model import Transformer
 
 import sys
 

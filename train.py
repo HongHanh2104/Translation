@@ -44,8 +44,6 @@ def train(config):
         num_workers=config['dataset']['val']['num_workers'],
         collate_fn=input_target_collate_fn,
     )
-    src_pad_idx = 0
-    trg_pad_idx = 0
 
     # Define model
     random.seed(config['seed'])
@@ -76,14 +74,12 @@ def train(config):
 
     # Define loss
     random.seed(config['seed'])
-    # loss = nn.CrossEntropyLoss(ignore_index=src_pad_idx)
     loss = TokenCrossEntropyLoss(
         pad_idx=train_data.vi_tokenizer.token_to_id('<pad>'))
     loss = loss.to(device)
 
     # Define metrics
     random.seed(config['seed'])
-    # metric = BLEUMetric()
     metric = nltk.translate.bleu_score
 
     # Define Optimizer
@@ -93,11 +89,7 @@ def train(config):
         lr=config['trainer']['lr'],
         betas=(0.9, 0.98), eps=1e-09
     )
-    # optimizer = ScheduledOptim(
-    # params=filter(lambda x: x.requires_grad, model.parameters()),
-    # betas=(0.9, 0.98), eps=1e-09,
-    # d_model=512, n_warmup_steps=4000)
-
+    
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer=optimizer,
         verbose=True,

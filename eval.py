@@ -4,9 +4,9 @@ import nltk
 from tqdm import tqdm
 import numpy as np
 
-from dataset.en_vi_dataset import EN_VIDataset
-from models.model import Transformer
-from utils.utils import input_target_collate_fn
+from src.dataset.en_vi_dataset import EN_VIDataset
+from src.models.model import Transformer
+from src.utils.utils import input_target_collate_fn
 
 import sys
 import csv
@@ -89,14 +89,8 @@ with torch.no_grad():
         src = src.to(dev)
         trg = trg.to(dev)
 
-        # src_ = src.cpu().numpy()
-        # src_ = ds.en_tokenizer.decode_batch(src_)[0]
-        # print(src_)
-
         trg_ = trg.cpu().numpy()[:, 1:]
-        # for t in trg_:
-        #     print(t)
-        # print(trg_)
+
         ps = postprocess_batch(trg_, SRC_EOS_ID)
         if token_type == 'bpe':
             ps = [[x.split()] for x in ds.vi_tokenizer.decode_batch(ps)]
@@ -126,14 +120,9 @@ with torch.no_grad():
             ]
         elif token_type == 'bpe':
             ps = [x.split() for x in ds.vi_tokenizer.decode_batch(ps)]
-        # print(ps)
         preds += ps
 
-        # print(trgs, preds)
-
         score = nltk.translate.bleu_score.corpus_bleu(trgs, preds)
-
-        # break
 
         csv.writer(open('output.txt', 'w'), delimiter=' ').writerows(preds)
 
