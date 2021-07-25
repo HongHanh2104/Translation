@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models.sublayers import MultiHeadAttention, PositionwiseFeedForward
+from src.models.sublayers import MultiHeadAttention, PositionwiseFeedForward
 
 
 class EncoderLayer(nn.Module):
@@ -88,13 +88,3 @@ class DecoderLayer(nn.Module):
         return x
 
 
-if __name__ == '__main__':
-    x = torch.randn(1, 3, 4).cpu()
-    encoderlayer = EncoderLayer(d_model=4, d_ffn=4, n_head=2)
-    ecd_out = encoderlayer(x).cpu()
-    print(ecd_out.size())
-
-    y = torch.randn(1, 3, 4).cpu()
-    decoderlayer = DecoderLayer(d_model=4, d_ffn=4, n_head=2)
-    dcd_out = decoderlayer(y, ecd_out).cpu()
-    print(dcd_out.size())

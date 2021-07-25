@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from models.layers import EncoderLayer, DecoderLayer
-from models.embedding import TransformerEmbedding, WordEmbedding, ComplexEmbedding
-from models.mask import get_pad_mask, get_subsequent_mask
+from src.models.layers import EncoderLayer, DecoderLayer
+from src.models.embedding import TransformerEmbedding, WordEmbedding, ComplexEmbedding
+from src.models.mask import get_pad_mask, get_subsequent_mask
 
 
 class Encoder(nn.Module):

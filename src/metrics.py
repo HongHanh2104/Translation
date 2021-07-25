@@ -117,20 +117,6 @@ if __name__ == '__main__':
     print(result[0])
     print(result[1])
 
-# if __name__ == '__main__':
-#     from nltk.translate.bleu_score import sentence_bleu
-#     import nltk
-
-#     metric = nltk.translate.bleu_score
-
-#     hypothesis = [[2, 3, 4, 9], [5, 9, 7, 3]]
-#     reference = [[[2, 3, 4, 9]], [[5, 9, 7, 3]]]
-
-#     bleu_score = metric.corpus_bleu(
-#                     reference, 
-#                     hypothesis,
-#                     smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1)
-#     print(bleu_score)
 
 
 

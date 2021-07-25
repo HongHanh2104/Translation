@@ -5,8 +5,8 @@ from tqdm import tqdm
 from datetime import datetime
 import os
 
-from loggers import TensorboardLogger
-from utils.utils import preprocess
+from src.loggers import TensorboardLogger
+from src.utils.utils import preprocess
 
 
 class Trainer():
@@ -168,13 +168,6 @@ class Trainer():
                                         out[j].max(dim=1)[1].to('cpu').numpy())
                 refs.append([_trg])
                 hyps.append(_out)
-
-            # score_bleu = sum(total_bleu) / len(total_bleu)
-            # batch_bleu.append(score_bleu)
-            # print(refs)
-            # print('*'*50)
-            # print(hyps)
-            # break
 
         print("++++++++++++++ Evaluation result ++++++++++++++")
         loss = sum(total_loss) / sum(total_tokens)

@@ -138,13 +138,6 @@ class PositionwiseFeedForward(nn.Module):
         # x: [b, seq_len, d_model]
         return self.feed_forward(x)
 
-
-if __name__ == '__main__':
-    inputs = torch.randn(3, 5, 512).cpu()
-    ffn = PositionwiseFeedForward(512, 2048)
-    out = ffn(inputs).cpu()
-    print(out.size())
-
     
     
     

@@ -35,11 +35,3 @@ class ComplexEmbedding(nn.Module):
 
     def forward(self, x):
         return self.get_embedding(x)
-
-if __name__ == '__main__':
-    seq = torch.tensor(np.random.randint(
-        0, 100, size=(1, 6)), requires_grad=False) #([225, 24, 95, 34, 26, 71]).unsqueeze(0)
-    
-    cplx_emb = ComplexEmbedding(100, 512)
-    result = cplx_emb(seq)
-    print(result[1].shape)

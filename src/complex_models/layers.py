@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from complex_models.sublayers import MultiHeadAttention, PositionwiseFeedForward
+from src.complex_models.sublayers import MultiHeadAttention, PositionwiseFeedForward
 
 
 class EncoderLayer(nn.Module):

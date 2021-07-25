@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from complex_models.layers import EncoderLayer, DecoderLayer
-from complex_models.embedding import ComplexEmbedding
-from complex_models.mask import get_pad_mask, get_subsequent_mask
+from src.complex_models.layers import EncoderLayer, DecoderLayer
+from src.complex_models.embedding import ComplexEmbedding
+from src.complex_models.mask import get_pad_mask, get_subsequent_mask
 
 import numpy as np
 

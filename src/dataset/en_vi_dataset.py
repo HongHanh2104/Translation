@@ -1,7 +1,6 @@
 from tokenizers.implementations import ByteLevelBPETokenizer, BertWordPieceTokenizer
 from tokenizers.processors import BertProcessing
 
-from preprocess import preprocess_vi_data
 import torch
 from torch.utils import data
 import os

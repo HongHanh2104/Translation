@@ -11,11 +11,10 @@ from torch.utils.data import DataLoader
 from torch import optim
 from torch.optim import Adam, optimizer
 import nltk
+import yaml
 
 import argparse
 import random
-import yaml
-
 
 def train(config):
     # Get device
