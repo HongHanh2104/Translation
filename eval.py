@@ -31,16 +31,25 @@ def postprocess_batch(batch, eos_id):
 
 
 dev = 'cuda'
+weight_fn = sys.argv[1]
+phase = sys.argv[2] if len(sys.argv) > 2 else 'test'
 
-config = torch.load(sys.argv[1], map_location=dev)
+config = torch.load(weight_fn, map_location=dev)
 
 token_type = config['config']['dataset']['train']
 token_type = token_type.get(
     'config', {'token_type': 'bpe'}).get('token_type', 'bpe')
-data_cfg = {
-    'src_path': 'data/en-vi/raw-data/test/tst2013.en',
-    'trg_path': 'data/en-vi/raw-data/test/tst2013.vi',
-}
+
+if phase == 'val':
+    data_cfg = {
+        'src_path': 'data/en-vi/raw-data/val/tst2012.en',
+        'trg_path': 'data/en-vi/raw-data/val/tst2012.vi',
+    }
+elif phase == 'test':
+    data_cfg = {
+        'src_path': 'data/en-vi/raw-data/test/tst2013.en',
+        'trg_path': 'data/en-vi/raw-data/test/tst2013.vi',
+    }
 if token_type == 'bpe':
     data_cfg.update({
         'token_type': 'bpe',

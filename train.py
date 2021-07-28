@@ -1,5 +1,5 @@
 from src.dataset.en_vi_dataset import EN_VIDataset
-from src.models.model import Transformer 
+from src.models.model import Transformer
 from src.complex_models.model import ComplexTransformer
 from src.utils.utils import input_target_collate_fn
 from src.losses import TokenCrossEntropyLoss
@@ -16,6 +16,7 @@ import yaml
 import argparse
 import random
 
+
 def train(config):
     # Get device
     dev_id = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -23,7 +24,7 @@ def train(config):
 
     # Build dataset
     random.seed(config['seed'])
-    
+
     print('Building dataset ...')
     train_data = EN_VIDataset(**config['dataset']['train']['config'])
     val_data = EN_VIDataset(**config['dataset']['val']['config'])
@@ -88,7 +89,7 @@ def train(config):
         lr=config['trainer']['lr'],
         betas=(0.9, 0.98), eps=1e-09
     )
-    
+
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer=optimizer,
         verbose=True,

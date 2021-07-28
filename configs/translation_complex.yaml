@@ -1,4 +1,4 @@
-id: Transformer-En2Vi-VPE-WordPiece-ShareEmbPrj
+id: Transformer-En2Vi-ComplexValued-WordPiece
 seed: 2104
 pretrained_path: null
 model:
@@ -8,15 +8,14 @@ model:
     n_head: 8
     max_len: 256
     dropout: 0.1
-    share_emb_emb: False
-    share_emb_prj: True
-    emb_type: vpe
+    # share_emb_emb: False
+    # share_emb_prj: False
     # xavier_init: True
 trainer:
     nepochs: 50
     val_step: 1
     log_step: 1
-    lr: !!float 1e-4
+    lr: !!float 5e-5
 optimizer:
     patience: 10
     warmup: 10
@@ -34,10 +33,10 @@ dataset:
             token_type: wordpiece
             src_vocab: vocab/english_word/en-wordpiece-minfreq5-vocab.txt
             trg_vocab: vocab/vietnamese_word/vi-wordpiece-minfreq5-vocab.txt
-        batch_size: 16
+        batch_size: 8
         shuffle: True
         clip_grads: True
-        num_workers: 4
+        num_workers: 8
     val:
         config:
             src_path: data/en-vi/raw-data/val/tst2012.en
@@ -50,5 +49,5 @@ dataset:
             token_type: wordpiece
             src_vocab: vocab/english_word/en-wordpiece-minfreq5-vocab.txt
             trg_vocab: vocab/vietnamese_word/vi-wordpiece-minfreq5-vocab.txt
-        batch_size: 16
-        num_workers: 4
+        batch_size: 8
+        num_workers: 8
