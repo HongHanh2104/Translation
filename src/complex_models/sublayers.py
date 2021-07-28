@@ -39,11 +39,11 @@ class ScaledDotProductAttention(nn.Module):
         q_phase, k_phase, v_phase = x_phase
 
         attn_real = (q_real @ k_real.transpose(2, 3)) \
-                - (q_phase @ k_phase.transpose(2, 3)) # [b, n_head, q_len, k_len]
-        
+            - (q_phase @ k_phase.transpose(2, 3))  # [b, n_head, q_len, k_len]
+
         attn_phase = (q_real @ k_phase.transpose(2, 3)) \
-                + (q_phase @ k_real.transpose(2, 3)) # [b, n_head, q_len, k_len]
-        
+            + (q_phase @ k_real.transpose(2, 3))  # [b, n_head, q_len, k_len]
+
         if self.continue_complex:
             attn_real = attn_real / self.scale
             attn_phase = attn_phase / self.scale
@@ -61,17 +61,17 @@ class ScaledDotProductAttention(nn.Module):
         else:
             attn = attn_real * attn_real + attn_phase * attn_phase
             attn = torch.sqrt(attn)
-            attn /= self.scale
+            attn = attn / self.scale
 
             if mask is not None:
                 mask = mask.unsqueeze(1)
                 attn = attn.masked_fill(mask == 0, -1e9)
-            
-            # paper k dropout ????
-            attn = self.softmax(attn)
 
-            x_real = attn @ v_real # [b, n_head, seq_len, d_v]
-            x_phase = attn @ v_phase # [b, n_head, seq_len, d_v]
+            # paper k dropout ????
+            attn = self.attn_drop(self.softmax(attn))
+
+            x_real = attn @ v_real  # [b, n_head, seq_len, d_v]
+            x_phase = attn @ v_phase  # [b, n_head, seq_len, d_v]
 
         return x_real, x_phase, attn_real
 
@@ -127,7 +127,7 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x_real, x_phase, mask=None):
         # x_real is a list of 3 elements: q_real, k_real, v_real
         # x_phase is a list of 3 elements: q_phase, k_phase, v_phase
-        
+
         # q, k, v: [b, seq_len, d_model]
         # mask: [b, query_len, key_len]
 
@@ -137,27 +137,34 @@ class MultiHeadAttention(nn.Module):
         b = q_real.shape[0]
 
         # q, k, v_{real/ phase}: [b, n_head, seq_len, d_k or d_v]
-        q_real = self.w_q(q_real).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
-        k_real = self.w_k(k_real).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
-        v_real = self.w_v(v_real).reshape(b, -1, self.n_head, self.d_v).transpose(1, 2)
+        q_real = self.w_q(q_real).reshape(
+            b, -1, self.n_head, self.d_k).transpose(1, 2)
+        k_real = self.w_k(k_real).reshape(
+            b, -1, self.n_head, self.d_k).transpose(1, 2)
+        v_real = self.w_v(v_real).reshape(
+            b, -1, self.n_head, self.d_v).transpose(1, 2)
 
-        q_phase = self.w_q(q_phase).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
-        k_phase = self.w_k(k_phase).reshape(b, -1, self.n_head, self.d_k).transpose(1, 2)
-        v_phase = self.w_v(v_phase).reshape(b, -1, self.n_head, self.d_v).transpose(1, 2)
+        q_phase = self.w_q(q_phase).reshape(
+            b, -1, self.n_head, self.d_k).transpose(1, 2)
+        k_phase = self.w_k(k_phase).reshape(
+            b, -1, self.n_head, self.d_k).transpose(1, 2)
+        v_phase = self.w_v(v_phase).reshape(
+            b, -1, self.n_head, self.d_v).transpose(1, 2)
 
         x_real, x_phase, _ = self.attention(
-                                [q_real, k_real, v_real], 
-                                [q_phase, k_phase, v_phase], 
-                                mask=mask
-                                ) # [b, n_head, seq_len, d_v]
+            [q_real, k_real, v_real],
+            [q_phase, k_phase, v_phase],
+            mask=mask
+        )  # [b, n_head, seq_len, d_v]
 
         x_real = x_real.transpose(1, 2).reshape(b, -1, self.n_head * self.d_v)
-        x_phase = x_phase.transpose(1, 2).reshape(b, -1, self.n_head * self.d_v)
+        x_phase = x_phase.transpose(1, 2).reshape(
+            b, -1, self.n_head * self.d_v)
 
-        x_real = self.out_proj(x_real) # [b, seq_len, d_model]
-        x_phase = self.out_proj(x_phase) # [b, seq_len, d_model]
+        x_real = self.out_proj(x_real)  # [b, seq_len, d_model]
+        x_phase = self.out_proj(x_phase)  # [b, seq_len, d_model]
 
-        return x_real, x_phase 
+        return x_real, x_phase
 
 
 class PositionwiseFeedForward(nn.Module):
@@ -168,7 +175,7 @@ class PositionwiseFeedForward(nn.Module):
 
     def __init__(self, d_model, d_ffn, dropout=0.1):
         super().__init__()
-        
+
         self.linear_1 = nn.Linear(d_model, d_ffn)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
@@ -176,18 +183,21 @@ class PositionwiseFeedForward(nn.Module):
 
     def forward(self, x_real, x_phase):
         # x: [b, seq_len, d_model]
-        w_real = self.relu(self.linear_1(x_real) - \
-                            self.linear_1(x_phase)) # [b, seq_len, d_ffn]
-        w_phase = self.relu(self.linear_1(x_phase) + \
-                             self.linear_1(x_real)) # [b, seq_len, d_ffn]
-        
+        w_real = self.relu(self.linear_1(x_real) -
+                           self.linear_1(x_phase))  # [b, seq_len, d_ffn]
+        w_phase = self.relu(self.linear_1(x_phase) +
+                            self.linear_1(x_real))  # [b, seq_len, d_ffn]
+
         w_real = self.dropout(w_real)
         w_phase = self.dropout(w_phase)
-        
-        x_real = self.linear_2(w_real) - self.linear_2(w_phase) # [b, seq_len, d_model]
-        x_phase = self.linear_2(w_phase) + self.linear_2(w_real) # [b, seq_len, d_model]
+
+        # [b, seq_len, d_model]
+        x_real = self.linear_2(w_real) - self.linear_2(w_phase)
+        # [b, seq_len, d_model]
+        x_phase = self.linear_2(w_phase) + self.linear_2(w_real)
 
         return x_real, x_phase
+
 
 if __name__ == '__main__':
     # x_real = torch.randn(3, 10, 512)
@@ -205,8 +215,8 @@ if __name__ == '__main__':
 
     x_real = [q_real, k_real, v_real]
     x_phase = [q_phase, k_phase, v_phase]
-    
+
     # multi_head_attn = MultiHeadAttention(d_model=512, n_head=8, continue_complex=False)
-    # out = multi_head_attn([q_real, k_real, v_real], 
+    # out = multi_head_attn([q_real, k_real, v_real],
     #                       [q_phase, k_phase, v_phase])
     # print(out[0].shape)

@@ -14,7 +14,7 @@ class Encoder(nn.Module):
                  d_ffn,
                  n_layer,
                  n_head,
-                 dropout=0.1, 
+                 dropout=0.1,
                  continue_complex=False):
         super().__init__()
         self.d_model = d_model
@@ -31,9 +31,9 @@ class Encoder(nn.Module):
     def forward(self, x_real, x_phase, src_mask):
         # src_seq: [b, seq_len, embed_size]
         for layer in self.layer_stack:
-            x_real, x_phase = layer(x_real, x_phase, 
+            x_real, x_phase = layer(x_real, x_phase,
                                     src_mask)
-        
+
         return x_real, x_phase
 
 
@@ -52,20 +52,20 @@ class Decoder(nn.Module):
             DecoderLayer(d_model=d_model,
                          d_ffn=d_ffn,
                          n_head=n_head,
-                         dropout=dropout, 
+                         dropout=dropout,
                          continue_complex=continue_complex)
             for _ in range(n_layer)
         ])
 
-    def forward(self, x_real, x_phase, enc_out_real, 
-                enc_put_phase, dec_enc_attn_mask=None, 
+    def forward(self, x_real, x_phase, enc_out_real,
+                enc_put_phase, dec_enc_attn_mask=None,
                 slf_attn_mask=None):
         # trg: [b, seq_len - 1, d_model]
         # enc_outs: [b, seq_len, d_model]
         for layer in self.layer_stack:
-            x_real, x_phase = layer(x_real, x_phase, enc_out_real, 
-                        enc_put_phase, dec_enc_attn_mask, 
-                        slf_attn_mask)
+            x_real, x_phase = layer(x_real, x_phase, enc_out_real,
+                                    enc_put_phase, dec_enc_attn_mask,
+                                    slf_attn_mask)
 
         return x_real, x_phase
 
@@ -84,7 +84,8 @@ class ComplexTransformer(nn.Module):
                  dropout=0.1,
                  continue_complex=False,
                  xavier_init=True,
-                 share_emb_prj=False):
+                 share_emb_prj=False,
+                 share_emb_emb=False):
         super().__init__()
         self.src_pad_idx, self.trg_pad_idx = src_pad_idx, trg_pad_idx
         self.max_len = max_len
@@ -139,14 +140,14 @@ class ComplexTransformer(nn.Module):
 
         # [batch, seq_len, d_model]
         enc_out_real, enc_out_phase = self.encoder(
-                                        src_emb_real, src_emb_phase, 
-                                        src_mask)
+            src_emb_real, src_emb_phase,
+            src_mask)
         # [b, seq_len, trg_vocab_size]
         dec_out_real, dec_out_phase = self.decoder(
-                                        trg_emb_real, trg_emb_phase, 
-                                        enc_out_real, enc_out_phase, 
-                                        src_mask, trg_mask)
-        
+            trg_emb_real, trg_emb_phase,
+            enc_out_real, enc_out_phase,
+            src_mask, trg_mask)
+
         dec_out = dec_out_real * dec_out_real + dec_out_phase * dec_out_phase
 
         out = self.proj_linear(dec_out)  # [b, seq_len, trg_vocab_size]
