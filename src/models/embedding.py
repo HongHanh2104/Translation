@@ -89,6 +89,47 @@ class WordEmbedding(nn.Module):
         return x  # [b, seq_len, d_model]
 
 
+class VanillaEmbedding(nn.Module):
+    """
+    Word embedding = Token embedding + Pos embedding
+
+    @param:
+    :vocab_size: size of vocabulary
+    :max_len:  max setence length
+    :d_model: dimension of model
+    """
+
+    def __init__(self,
+                 vocab_size,
+                 d_model,
+                 padding_idx,
+                 max_len=256,
+                 dropout=0.1):
+        super().__init__()
+
+        self.d_emb = d_model
+        self.word_emb = nn.Embedding(
+            vocab_size,
+            self.d_emb,
+            padding_idx=padding_idx
+        )
+        self.pos_emb = nn.Embedding(
+            max_len,
+            self.d_emb,
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        # x: [b, seq_len]
+        b, length = x.shape
+        x = self.word_emb(x) * math.sqrt(self.d_emb)
+        pos = torch.arange(
+            0, length, 1, device=x.device).unsqueeze(0).repeat(b, 1)
+        x = x + self.pos_emb(pos)
+        x = self.dropout(x)
+        return x  # [b, seq_len, d_model]
+
+
 class ComplexEmbedding(nn.Module):
     def __init__(self,
                  vocab_size,
@@ -100,18 +141,18 @@ class ComplexEmbedding(nn.Module):
         self.d_emb = d_model
 
         self.word_emb = nn.Embedding(
-            vocab_size, 
-            self.d_emb // 2, 
+            vocab_size,
+            self.d_emb,
             padding_idx=padding_idx
         )
         self.freq_emb = nn.Embedding(
-            vocab_size, 
-            self.d_emb // 2, 
+            vocab_size,
+            self.d_emb // 2,
             padding_idx=padding_idx
         )
         self.init_phase_emb = nn.Embedding(
-            vocab_size, 
-            self.d_emb // 2, 
+            vocab_size,
+            self.d_emb // 2,
             padding_idx=padding_idx
         )
 
@@ -127,14 +168,21 @@ class ComplexEmbedding(nn.Module):
 
         pos = torch.arange(1, length + 1, 1.0, device=x.device)  # [seq_len]
         pos = pos.unsqueeze(0).unsqueeze(-1)
-        pos = pos.repeat([b, 1, amp.shape[-1]])  # [b, seq_len, d_emb]
+        pos = pos.repeat([b, 1, self.d_emb // 2])  # [b, seq_len, d_emb]
         dim_bias = self.init_phase_emb(x)  # [b, seq_len, d_emb]
         out_phase = torch.mul(pos, freq) + dim_bias  # [b, seq_len, d_emb]
-        out_real = amp * torch.cos(out_phase)  # [b, seq_len, d_emb]
-        out_im = amp * torch.sin(out_phase)  # [b, seq_len, d_emb]
+
+        pos_emb = torch.cat([torch.cos(out_phase), torch.sin(out_phase)], -1)
+        out = amp * pos_emb
+
+        return self.dropout(out)
+
+        # out_real = amp * torch.cos(out_phase)  # [b, seq_len, d_emb]
+        # out_im = amp * torch.sin(out_phase)  # [b, seq_len, d_emb]
 
         # [b, seq_len, d_model]
-        return self.dropout(torch.cat([out_real, out_im], -1))
+        # return self.dropout(torch.cat([out_real, out_im], -1))
+        # return self.dropout(out_real + out_im)
 
     def forward(self, x):
         return self.get_embedding(x)

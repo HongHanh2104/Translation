@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from src.models.layers import EncoderLayer, DecoderLayer
-from src.models.embedding import TransformerEmbedding, WordEmbedding, ComplexEmbedding
+from src.models.embedding import TransformerEmbedding, WordEmbedding, ComplexEmbedding, VanillaEmbedding
 from src.models.mask import get_pad_mask, get_subsequent_mask
 
 
@@ -186,7 +186,7 @@ class Transformer(nn.Module):
         super().__init__()
         self.src_pad_idx, self.trg_pad_idx = src_pad_idx, trg_pad_idx
         self.max_len = max_len
-        assert emb_type in ['tf', 'complex', 'nope']
+        assert emb_type in ['tf', 'complex', 'nope', 'vpe']
 
         if emb_type == 'tf':
             self.enc_emb = TransformerEmbedding(
@@ -208,25 +208,43 @@ class Transformer(nn.Module):
             self.enc_emb = ComplexEmbedding(
                 vocab_size=n_src_vocab,
                 d_model=d_model,
-                padding_idx=src_pad_idx
+                padding_idx=src_pad_idx,
+                dropout=dropout
             )
 
             self.dec_emb = ComplexEmbedding(
                 vocab_size=n_trg_vocab,
                 d_model=d_model,
-                padding_idx=trg_pad_idx
+                padding_idx=trg_pad_idx,
+                dropout=dropout
             )
         elif emb_type == 'nope':
             self.enc_emb = WordEmbedding(
                 vocab_size=n_src_vocab,
                 d_model=d_model,
-                padding_idx=src_pad_idx
+                padding_idx=src_pad_idx,
+                dropout=dropout
             )
 
             self.dec_emb = WordEmbedding(
                 vocab_size=n_trg_vocab,
                 d_model=d_model,
-                padding_idx=trg_pad_idx
+                padding_idx=trg_pad_idx,
+                dropout=dropout
+            )
+        elif emb_type == 'vpe':
+            self.enc_emb = VanillaEmbedding(
+                vocab_size=n_src_vocab,
+                d_model=d_model,
+                padding_idx=src_pad_idx,
+                dropout=dropout
+            )
+
+            self.dec_emb = VanillaEmbedding(
+                vocab_size=n_trg_vocab,
+                d_model=d_model,
+                padding_idx=trg_pad_idx,
+                dropout=dropout
             )
 
         self.d_model = self.enc_emb.d_emb
@@ -253,12 +271,7 @@ class Transformer(nn.Module):
                     nn.init.xavier_uniform_(p)
 
         if share_emb_prj:
-            if emb_type == 'complex':
-                l = self.proj_linear.weight.size(-1) // 2
-                self.proj_linear.weight[:, :l] = self.dec_emb.word_emb.weight
-                self.proj_linear.weight[:, l:] = self.dec_emb.word_emb.weight
-            else:
-                self.proj_linear.weight = self.dec_emb.word_emb.weight
+            self.proj_linear.weight = self.dec_emb.word_emb.weight
 
         if share_emb_emb:
             self.dec_emb.word_emb.weight = self.enc_emb.word_emb.weight
