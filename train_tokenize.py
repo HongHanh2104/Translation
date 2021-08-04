@@ -1,12 +1,38 @@
 from tokenizers import ByteLevelBPETokenizer, BertWordPieceTokenizer
+import argparse
 
-tok_type = 'wordpiece'
-lowercase = False
-files = ['data/en-vi/raw-data/train/train.vi',
-         'data/en-vi/raw-data/train/train.en']
-min_freq = 5
-output_dir = 'vocab/shared_word'
-output_name = 'shared-wordpiece-minfreq5'
+parser = argparse.ArgumentParser(description='Train a tokenizer')
+parser.add_argument('-t', '--token_type',
+                    help='Tokenization type',
+                    type=str,
+                    choices=['wordpiece', 'bpe'])
+parser.add_argument('-l', '--lowercase',
+                    help='Toggle using lowercase',
+                    action='store_true')
+parser.add_argument('-f', '--files',
+                    help='List of files to train tokenizers',
+                    type=str,
+                    nargs='+')
+parser.add_argument('-m', '--min_freq',
+                    help='Minimum number of occurrences for a token to be included',
+                    type=int,
+                    default=0)
+parser.add_argument('-o', '--out_dir',
+                    help='Output directory',
+                    type=str,
+                    default='.')
+parser.add_argument('-of', '--out_fn',
+                    help='Output filename',
+                    type=str,
+                    default='tokenization')
+args = parser.parse_args()
+
+tok_type = args.token_type
+lowercase = args.lowercase
+files = args.files
+min_freq = args.min_freq
+output_dir = args.out_dir
+output_name = args.out_fn
 
 if tok_type == 'bpe':
     tokenizer = ByteLevelBPETokenizer(lowercase=lowercase)

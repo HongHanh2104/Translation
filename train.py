@@ -119,7 +119,7 @@ def train(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config')
+    parser.add_argument('--config', help='Path to configuration file')
     args = parser.parse_args()
 
     config_path = args.config

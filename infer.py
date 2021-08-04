@@ -1,17 +1,26 @@
 import torch
-from tqdm import tqdm
 from tokenizers.implementations import ByteLevelBPETokenizer, BertWordPieceTokenizer
 from tokenizers.processors import BertProcessing
 
 from src.models.model import Transformer
 
-import sys
+import argparse
+
+parser = argparse.ArgumentParser(description='CLI inference')
+parser.add_argument('--cuda',
+                    help='Toggle using GPU',
+                    action='store_true')
+parser.add_argument('-w', '--weights',
+                    help='Path to pretrained weights',
+                    type=str)
+args = parser.parse_args()
 
 MAX_LEN = 256
 
-dev = 'cuda'
+dev = 'cuda' if args.cuda else 'cpu'
+weight_fn = args.weights
 
-config = torch.load(sys.argv[1], map_location=dev)
+config = torch.load(weight_fn, map_location=dev)
 data_cfg = config['config']['dataset']['train']['config']
 token_type = data_cfg['token_type']
 

@@ -8,8 +8,8 @@ from src.dataset.en_vi_dataset import EN_VIDataset
 from src.models.model import Transformer
 from src.utils.utils import input_target_collate_fn
 
-import sys
 import csv
+import argparse
 
 
 def postprocess_wordpiece(x, tokenizer):
@@ -30,9 +30,29 @@ def postprocess_batch(batch, eos_id):
     return ps
 
 
-dev = 'cuda'
-weight_fn = sys.argv[1]
-phase = sys.argv[2] if len(sys.argv) > 2 else 'test'
+parser = argparse.ArgumentParser(description='Evaluate a model.')
+parser.add_argument('--cuda',
+                    help='Toggle using GPU',
+                    action='store_true')
+parser.add_argument('-w', '--weights',
+                    help='Path to pretrained weights',
+                    type=str)
+parser.add_argument('-s', '--source',
+                    help='Source language validation file',
+                    type=str)
+parser.add_argument('-t', '--target',
+                    help='Target language validation file',
+                    type=str)
+parser.add_argument('-bs', '--batch_size',
+                    help='Size of batches',
+                    type=int, default=32)
+args = parser.parse_args()
+
+dev = 'cuda' if args.cuda else 'cpu'
+weight_fn = args.weights
+src_path = args.source
+trg_path = args.target
+batch_size = args.batch_size
 
 config = torch.load(weight_fn, map_location=dev)
 
@@ -40,16 +60,11 @@ token_type = config['config']['dataset']['train']
 token_type = token_type.get(
     'config', {'token_type': 'bpe'}).get('token_type', 'bpe')
 
-if phase == 'val':
-    data_cfg = {
-        'src_path': 'data/en-vi/raw-data/val/tst2012.en',
-        'trg_path': 'data/en-vi/raw-data/val/tst2012.vi',
-    }
-elif phase == 'test':
-    data_cfg = {
-        'src_path': 'data/en-vi/raw-data/test/tst2013.en',
-        'trg_path': 'data/en-vi/raw-data/test/tst2013.vi',
-    }
+
+data_cfg = {
+    'src_path': src_path,
+    'trg_path': trg_path,
+}
 if token_type == 'bpe':
     data_cfg.update({
         'token_type': 'bpe',
@@ -67,7 +82,7 @@ elif token_type == 'wordpiece':
         'trg_vocab': 'vocab/vietnamese_word/vi-wordpiece-minfreq5-vocab.txt',
     })
 ds = EN_VIDataset(**data_cfg)
-dl = DataLoader(ds, batch_size=64,
+dl = DataLoader(ds, batch_size=batch_size,
                 collate_fn=input_target_collate_fn)
 
 
